@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCHOOL MONEY - Admin Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { 
+            --bbl-blue: #0033A0; 
+            --bbl-orange: #F37021; 
+            --bg-color: #F4F6F9;
+            --card-bg: #FFFFFF;
+            --text-main: #333333;
+        }
+        * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        
+        /* หน้า Login */
+        .login-card { background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; border-top: 5px solid var(--bbl-orange); }
+        .login-card h2 { color: var(--bbl-blue); margin-bottom: 25px; font-weight: 700; }
+        .login-card input { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; outline: none; }
+        .login-card input:focus { border-color: var(--bbl-blue); }
+        .login-card button { width: 100%; padding: 12px; background: var(--bbl-blue); color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: opacity 0.2s; }
+        .login-card button:hover { opacity: 0.9; }
+
+        /* แผงควบคุม Admin */
+        .admin-card { display: none; width: 100%; max-width: 1200px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; margin: auto; }
+        .admin-card.active { display: block; animation: fadeIn 0.4s ease-out; }
+        
+        .admin-header { 
+            background: linear-gradient(135deg, var(--bbl-blue), #002270); 
+            color: white; 
+            padding: 25px 30px; 
+            border-bottom: 4px solid var(--bbl-orange); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .admin-header h1 { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        
+        .tab-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .tab-btn { background: rgba(255,255,255,0.15); color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.3s ease; }
+        .tab-btn:hover { background: rgba(255,255,255,0.25); }
+        .tab-btn.active { background: white; color: var(--bbl-blue); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .btn-logout { background: #E74C3C; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+        
+        .section { display: none; padding: 25px 30px; }
+        .section.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* การ์ดสรุปยอด */
+        .summary-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .summary-box { background: #f8f9fa; border-radius: 8px; padding: 15px 20px; border-left: 5px solid var(--bbl-blue); box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .summary-box.income { border-left-color: #2E7D32; }
+        .summary-box.expense { border-left-color: #D32F2F; }
+        .summary-box.balance { border-left-color: var(--bbl-orange); }
+        .summary-title { font-size: 0.85rem; color: #666; margin-bottom: 5px; font-weight: 600; }
+        .summary-value { font-size: 1.3rem; font-weight: 700; font-family: monospace; }
+
+        /* ตัวกรอง */
+        .bank-filter { display: flex; gap: 12px; margin-bottom: 25px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eaeaea; flex-wrap: wrap; }
+        .bank-filter select { padding: 10px 15px; font-size: 0.95rem; border: 1px solid #ccc; color: var(--bbl-blue); font-weight: bold; border-radius: 6px; background: white; outline: none; }
+        .bank-filter button { padding: 10px 20px; background: var(--bbl-orange); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
+
+        /* ตาราง */
+        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid #eaeaea; }
+        table { width: 100%; border-collapse: collapse; background: white; text-align: left; }
+        th, td { padding: 12px 16px; font-size: 0.9rem; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #444; font-weight: 700; text-align: center; }
+        td { text-align: center; }
+        tr:hover { background: #fafbfc; }
+        .col-amt { text-align: right !important; font-family: monospace; font-size: 1rem; }
+        
+        .badge-income { color: #2E7D32; background: #E8F5E9; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .badge-expense { color: #D32F2F; background: #FFEBEE; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+
+        .btn-edit { background: #F39C12; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-right: 5px; }
+        .btn-del { background: #E74C3C; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+
+        .config-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 25px; max-width: 600px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .config-box h3 { color: var(--bbl-blue); margin-bottom: 10px; }
+        .config-box p { font-size: 0.9rem; color: #666; margin-bottom: 15px; }
+        .config-box input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; margin-bottom: 15px; font-family: monospace; }
+        .config-box button { background: var(--bbl-blue); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+    <!-- 🔒 หน้า Login สำหรับแอดมิน -->
+    <div id="login-section" class="login-card">
+        <h2>🔐 เข้าสู่ระบบ Admin</h2>
+        <input type="text" id="admin-user" placeholder="ชื่อผู้ดูแลระบบ (Username)">
+        <input type="password" id="admin-pass" placeholder="รหัสผ่าน (Password)">
+        <button onclick="doAdminLogin()">เข้าสู่ระบบ</button>
+        <div id="login-err" style="color: #D32F2F; margin-top: 10px; font-size: 0.9rem; font-weight: bold;"></div>
+    </div>
+
+    <!-- 📊 หน้า Dashboard หลักของแอดมิน -->
+    <div id="admin-main" class="admin-card">
+        <div class="admin-header">
+            <h1>🏦 ระบบบริหารจัดการ (Admin Console)</h1>
+            <div class="tab-group">
+                <button class="tab-btn active" onclick="switchTab('tab-ledger')">📊 สมุดบัญชีรวม</button>
+                <button class="tab-btn" onclick="switchTab('tab-users')">👥 จัดการสมาชิก</button>
+                <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ ตั้งค่าระบบ AI</button>
+                <button class="btn-logout" onclick="doLogout()">🚪 ออกจากระบบ</button>
+            </div>
+        </div>
+        
+        <!-- แท็บ 1: สมุดบัญชีรวม -->
+        <div id="tab-ledger" class="section active">
+            <div class="summary-container">
+                <div class="summary-box income">
+                    <div class="summary-title">🟢 ยอดรับรวมทั้งหมด</div>
+                    <div class="summary-value" id="sum-income" style="color: #2E7D32;">0.00 ฿</div>
+                </div>
+                <div class="summary-box expense">
+                    <div class="summary-title">🔴 ยอดจ่ายรวมทั้งหมด</div>
+                    <div class="summary-value" id="sum-expense" style="color: #D32F2F;">0.00 ฿</div>
+                </div>
+                <div class="summary-box balance">
+                    <div class="summary-title">💰 ยอดเงินคงเหลือสุทธิ</div>
+                    <div class="summary-value" id="sum-balance" style="color: var(--bbl-blue);">0.00 ฿</div>
+                </div>
+            </div>
+
+            <div class="bank-filter">
+                <span style="font-weight:600; color:var(--bbl-blue);">📅 เลือกดูรายงานประจำเดือน:</span>
+                <select id="admin-month">
+                    <option value="all">รวมทุกเดือน</option>
+                    <option value="01">มกราคม</option>
+                    <option value="02">กุมภาพันธ์</option>
+                    <option value="03">มีนาคม</option>
+                    <option value="04">เมษายน</option>
+                    <option value="05">พฤษภาคม</option>
+                    <option value="06">มิถุนายน</option>
+                    <option value="07">กรกฎาคม</option>
+                    <option value="08">สิงหาคม</option>
+                    <option value="09">กันยายน</option>
+                    <option value="10">ตุลาคม</option>
+                    <option value="11">พฤศจิกายน</option>
+                    <option value="12">ธันวาคม</option>
+                </select>
+                <select id="admin-year"></select>
+                <button onclick="refreshData()">🔍 ค้นหาข้อมูล</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width:12%">วัน เดือน ปี</th>
+                            <th rowspan="2" style="width:22%; text-align: left; padding-left: 20px;">รายการ (ชื่อผู้ใช้)</th>
+                            <th colspan="2">ยอดเงิน (บาท)</th>
+                            <th rowspan="2" class="col-amt" style="width:18%">คงเหลือ (บาท)</th>
+                            <th rowspan="2" style="width:18%; text-align: left;">หมายเหตุ</th>
+                        </tr>
+                        <tr>
+                            <th style="background:#E8F5E9; width:14%">รายรับ</th>
+                            <th style="background:#FFEBEE; width:14%">รายจ่าย</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- แท็บ 2: จัดการสมาชิก -->
+        <div id="tab-users" class="section">
+            <h3 style="color:var(--bbl-blue); margin-bottom:15px; font-size: 1.2rem;">👥 รายชื่อสมาชิกทั้งหมดในระบบ</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:10%">ลำดับ</th>
+                            <th style="width:35%; text-align: left; padding-left: 20px;">ชื่อผู้ใช้งาน (Username)</th>
+                            <th style="width:25%">รหัสผ่าน (PIN)</th>
+                            <th style="width:30%">จัดการข้อมูล</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- แท็บ 3: ตั้งค่าระบบ AI -->
+        <div id="tab-settings" class="section">
+            <div class="config-box">
+                <h3>🔑 ตั้งค่า Gemini API Key สำหรับระบบหลังบ้าน</h3>
+                <p>ใส่รหัส API Key ของคุณที่นี่ ระบบจะบันทึกเก็บไว้ใช้งานสแกนสลิปอย่างปลอดภัย</p>
+                <input type="password" id="admin-api-key" placeholder="วางรหัส API Key ที่นี่">
+                <button onclick="saveAdminApiKey()">💾 บันทึก API Key ปลอดภัย</button>
+                <div id="save-status" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SB_URL = 'https://nnxraimetlwvsekburkm.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ueHJhaW1ldGx3dnNla2J1cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5ODEyMjgsImV4cCI6MjEwMDU1NzIyOH0.6fGLFjKsKO94EVf3B_es1P-ImXnkcreC3zRKxiaDEiM';
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+
+        // ตรวจสอบสถานะการล็อกอินค้างไว้
+        if (localStorage.getItem('admin_logged') === 'true') {
+            showAdminDashboard();
+        }
+
+        async function doAdminLogin() {
+            const u = document.getElementById('admin-user').value.trim();
+            const p = document.getElementById('admin-pass').value.trim();
+            const errDiv = document.getElementById('login-err');
+
+            if(!u || !p) {
+                errDiv.innerText = "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน";
+                return;
+            }
+
+            // ตรวจสอบจากตาราง admins ใน Supabase (ถ้ายังไม่มีตาราง admins ให้สร้างด้วยคอลัมน์ username และ password)
+            const { data, error } = await sb.from('admins').select('*').eq('username', u).eq('password', p);
+            
+            if(data && data.length > 0) {
+                localStorage.setItem('admin_logged', 'true');
+                showAdminDashboard();
+            } else {
+                errDiv.innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+            }
+        }
+
+        function showAdminDashboard() {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('admin-main').classList.add('active');
+            setupAdminDateFilters();
+            refreshData();
+        }
+
+        function doLogout() {
+            localStorage.removeItem('admin_logged');
+            location.reload();
+        }
+
+        function setupAdminDateFilters() {
+            const ySelect = document.getElementById('admin-year');
+            const d = new Date();
+            const curYear = d.getFullYear();
+            
+            let yHtml = '<option value="all">รวมทุกปี</option>';
+            for(let i = curYear + 2; i >= curYear - 20; i--) {
+                yHtml += `<option value="${i}">${i + 543}</option>`;
+            }
+            ySelect.innerHTML = yHtml;
+            ySelect.value = curYear.toString();
+            document.getElementById('admin-month').value = (d.getMonth() + 1).toString().padStart(2, '0');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+            
+            if(tabId === 'tab-users') loadUsers();
+            if(tabId === 'tab-ledger') refreshData();
+            if(tabId === 'tab-settings') loadAdminApiKey();
+        }
+
+        async function saveAdminApiKey() {
+            const keyVal = document.getElementById('admin-api-key').value.trim();
+            const statusDiv = document.getElementById('save-status');
+            if(!keyVal) return alert('กรุณากรอก API Key');
+
+            statusDiv.innerText = "⏳ กำลังบันทึก...";
+            statusDiv.style.color = "var(--bbl-blue)";
+
+            const { error } = await sb.from('settings').upsert({ id: 1, key_name: 'gemini_api_key', key_value: keyVal });
+            if(error) {
+                statusDiv.innerText = "❌ บันทึกไม่สำเร็จ: " + error.message;
+                statusDiv.style.color = "#D32F2F";
+            } else {
+                statusDiv.innerText = "✅ บันทึก API Key สำเร็จ!";
+                statusDiv.style.color = "#2E7D32";
+                document.getElementById('admin-api-key').value = '';
+                setTimeout(() => statusDiv.innerText = "", 4000);
+            }
+        }
+
+        async function loadAdminApiKey() {
+            const { data } = await sb.from('settings').select('*').eq('key_name', 'gemini_api_key').single();
+            if(data && data.key_value) {
+                document.getElementById('admin-api-key').placeholder = "🔑 มีการตั้งค่า API Key เรียบร้อยแล้ว (กรอกใหม่หากต้องการเปลี่ยน)";
+            }
+        }
+
+        async function refreshData() {
+            const { data } = await sb.from('transactions').select('*').order('date', {ascending: true}).order('id', {ascending: true});
+            const selMonth = document.getElementById('admin-month').value;
+            const selYear = document.getElementById('admin-year').value;
+
+            let rBalance = 0, totalIncome = 0, totalExpense = 0;
+            let filteredData = [];
+
+            if(data) {
+                data.forEach(i => {
+                    const amt = parseFloat(i.amount);
+                    if(i.type === 'income') { rBalance += amt; totalIncome += amt; }
+                    else { rBalance -= amt; totalExpense += amt; }
+                    i.balance = rBalance;
+
+                    const [y, m, d] = i.date.split('-');
+                    let matchMonth = (selMonth === 'all') || (m === selMonth);
+                    let matchYear = (selYear === 'all') || (y === selYear);
+                    if(matchMonth && matchYear) filteredData.push(i);
+                });
+            }
+
+            document.getElementById('sum-income').innerText = totalIncome.toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' ฿';
+            document.getElementById('sum-expense').innerText = totalExpense.toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' ฿';
+            document.getElementById('sum-balance').innerText = rBalance.toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' ฿';
+
+            if(filteredData.length === 0) {
+                document.getElementById('data-body').innerHTML = `<tr><td colspan="6" style="padding:30px; color:#888;">ไม่พบรายการธุรกรรมในเดือน/ปี ที่เลือก</td></tr>`;
+                return;
+            }
+
+            document.getElementById('data-body').innerHTML = [...filteredData].reverse().map(i => {
+                const aStr = parseFloat(i.amount).toLocaleString('th-TH', {minimumFractionDigits: 2});
+                const bStr = parseFloat(i.balance).toLocaleString('th-TH', {minimumFractionDigits: 2});
+                const inCol = i.type === 'income' ? `<td class="col-amt"><span class="badge-income">+${aStr}</span></td>` : `<td class="col-amt">-</td>`;
+                const outCol = i.type !== 'income' ? `<td class="col-amt"><span class="badge-expense">-${aStr}</span></td>` : `<td class="col-amt">-</td>`;
+                
+                const dParts = i.date.split('-');
+                const thDate = `${parseInt(dParts[2])}/${parseInt(dParts[1])}/${(parseInt(dParts[0])+543).toString().substring(2)}`;
+
+                return `<tr>
+                    <td style="font-weight: 600; color: #555;">${thDate}</td>
+                    <td style="text-align:left; padding-left:20px;">👤 <strong>${i.username}</strong></td>
+                    ${inCol}${outCol}
+                    <td class="col-amt" style="color:var(--bbl-blue); font-weight:bold;">${bStr}</td>
+                    <td style="text-align:left; color: #666;">${i.slip_text || '-'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function loadUsers() {
+            const { data } = await sb.from('users').select('*').order('id', {ascending: true});
+            if(!data) return;
+            document.getElementById('users-body').innerHTML = data.map((u, idx) => `
+                <tr>
+                    <td style="color: #666;">${idx + 1}</td>
+                    <td style="text-align: left; padding-left: 20px;"><strong>${u.username}</strong></td>
+                    <td style="font-family: monospace; letter-spacing: 2px;">${u.pin}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editUser('${u.username}', '${u.pin}')">✏️ แก้ไข PIN</button>
+                        <button class="btn-del" onclick="deleteUser('${u.username}')">🗑️ ลบ</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function editUser(username, oldPin) {
+            const newPin = prompt(`กรอกรหัส PIN 6 หลักใหม่ สำหรับผู้ใช้: ${username}`, oldPin);
+            if(newPin && newPin.length === 6 && newPin !== oldPin) {
+                await sb.from('users').update({ pin: newPin }).eq('username', username);
+                alert('อัปเดต PIN สำเร็จ');
+                loadUsers();
+            } else if(newPin) {
+                alert('รหัส PIN ต้องมีความยาว 6 หลักเท่านั้น');
+            }
+        }
+
+        async function deleteUser(username) {
+            if(confirm(`⚠️ คำเตือน: ยืนยันการลบสมาชิก "${username}" ?\nข้อมูลธุรกรรมทั้งหมดจะถูกลบออกไปด้วย`)) {
+                await sb.from('transactions').delete().eq('username', username);
+                await sb.from('users').delete().eq('username', username);
+                alert('ลบผู้ใช้งานสำเร็จ');
+                loadUsers();
+            }
+        }
+    </script>
+</body>
+</html>
