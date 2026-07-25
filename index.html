@@ -93,7 +93,7 @@
     <!-- 🔒 หน้า Login สำหรับแอดมิน -->
     <div id="login-section" class="login-card">
         <h2>🔐 เข้าสู่ระบบ Admin</h2>
-        <input type="text" id="admin-user" placeholder="ชื่อผู้ดูแลระบบ (Username)">
+        <input type="email" id="admin-user" placeholder="อีเมลแอดมิน (Email)">
         <input type="password" id="admin-pass" placeholder="รหัสผ่าน (Password)">
         <button onclick="doAdminLogin()">เข้าสู่ระบบ</button>
         <div id="login-err" style="color: #D32F2F; margin-top: 10px; font-size: 0.9rem; font-weight: bold;"></div>
@@ -187,13 +187,21 @@
             </div>
         </div>
 
-        <!-- แท็บ 3: ตั้งค่าระบบ AI -->
+        <!-- แท็บ 3: ตั้งค่าระบบ AI (ยืนยันรหัสผ่านผ่าน Supabase Auth อีกครั้งก่อนดู) -->
         <div id="tab-settings" class="section">
-            <div class="config-box">
+            <div id="api-lock-screen" class="config-box" style="text-align: center;">
+                <h3>🔒 ป้องกันความปลอดภัย</h3>
+                <p>กรุณากรอกรหัสผ่าน Supabase Authentication ของคุณอีกครั้ง เพื่อดูหรือแก้ไข Gemini API Key</p>
+                <input type="password" id="recheck-pass" placeholder="กรอกรหัสผ่านของคุณที่นี่" style="text-align: center;">
+                <button onclick="verifyAdminPassword()">🔓 ยืนยันรหัสผ่านเพื่อเข้าถึง</button>
+                <div id="verify-err" style="color: #D32F2F; margin-top: 10px; font-weight: bold;"></div>
+            </div>
+
+            <div id="api-content-box" class="config-box" style="display: none;">
                 <h3>🔑 ตั้งค่า Gemini API Key สำหรับระบบหลังบ้าน</h3>
-                <p>ใส่รหัส API Key ของคุณที่นี่ ระบบจะบันทึกเก็บไว้ใช้งานสแกนสลิปอย่างปลอดภัย</p>
-                <input type="password" id="admin-api-key" placeholder="วางรหัส API Key ที่นี่">
-                <button onclick="saveAdminApiKey()">💾 บันทึก API Key ปลอดภัย</button>
+                <p>คุณสามารถดูและอัปเดต API Key ได้ที่นี่</p>
+                <input type="text" id="admin-api-key" placeholder="Gemini API Key ปัจจุบัน">
+                <button onclick="saveAdminApiKey()">💾 บันทึก API Key ใหม่</button>
                 <div id="save-status" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem;"></div>
             </div>
         </div>
@@ -203,30 +211,40 @@
         const SB_URL = 'https://nnxraimetlwvsekburkm.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ueHJhaW1ldGx3dnNla2J1cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5ODEyMjgsImV4cCI6MjEwMDU1NzIyOH0.6fGLFjKsKO94EVf3B_es1P-ImXnkcreC3zRKxiaDEiM';
         const sb = supabase.createClient(SB_URL, SB_KEY);
+        
+        let currentAdminEmail = "";
 
-        // ตรวจสอบสถานะการล็อกอินค้างไว้
         if (localStorage.getItem('admin_logged') === 'true') {
+            currentAdminEmail = localStorage.getItem('admin_email') || "";
             showAdminDashboard();
         }
 
         async function doAdminLogin() {
-            const u = document.getElementById('admin-user').value.trim();
-            const p = document.getElementById('admin-pass').value.trim();
+            const email = document.getElementById('admin-user').value.trim();
+            const password = document.getElementById('admin-pass').value.trim();
             const errDiv = document.getElementById('login-err');
 
-            if(!u || !p) {
-                errDiv.innerText = "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน";
+            if(!email || !password) {
+                errDiv.innerText = "กรุณากรอกอีเมลและรหัสผ่าน";
                 return;
             }
 
-            // ตรวจสอบจากตาราง admins ใน Supabase (ถ้ายังไม่มีตาราง admins ให้สร้างด้วยคอลัมน์ username และ password)
-            const { data, error } = await sb.from('admins').select('*').eq('username', u).eq('password', p);
+            errDiv.innerText = "⏳ กำลังตรวจสอบ...";
+            errDiv.style.color = "var(--bbl-blue)";
+
+            const { data, error } = await sb.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
             
-            if(data && data.length > 0) {
-                localStorage.setItem('admin_logged', 'true');
-                showAdminDashboard();
+            if (error) {
+                errDiv.innerText = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+                errDiv.style.color = "#D32F2F";
             } else {
-                errDiv.innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+                localStorage.setItem('admin_logged', 'true');
+                localStorage.setItem('admin_email', email);
+                currentAdminEmail = email;
+                showAdminDashboard();
             }
         }
 
@@ -237,8 +255,10 @@
             refreshData();
         }
 
-        function doLogout() {
+        async function doLogout() {
+            await sb.auth.signOut();
             localStorage.removeItem('admin_logged');
+            localStorage.removeItem('admin_email');
             location.reload();
         }
 
@@ -264,7 +284,47 @@
             
             if(tabId === 'tab-users') loadUsers();
             if(tabId === 'tab-ledger') refreshData();
-            if(tabId === 'tab-settings') loadAdminApiKey();
+            if(tabId === 'tab-settings') {
+                document.getElementById('api-lock-screen').style.display = 'block';
+                document.getElementById('api-content-box').style.display = 'none';
+                document.getElementById('recheck-pass').value = '';
+                document.getElementById('verify-err').innerText = '';
+            }
+        }
+
+        // 🔐 ตรวจสอบรหัสผ่านซ้ำผ่าน Supabase Auth ก่อนเปิดช่อง API Key
+        async function verifyAdminPassword() {
+            const pass = document.getElementById('recheck-pass').value.trim();
+            const errDiv = document.getElementById('verify-err');
+
+            if(!pass) {
+                errDiv.innerText = "กรุณากรอกรหัสผ่าน";
+                return;
+            }
+
+            errDiv.innerText = "⏳ กำลังตรวจสอบรหัสผ่าน...";
+            errDiv.style.color = "var(--bbl-blue)";
+
+            const { error } = await sb.auth.signInWithPassword({
+                email: currentAdminEmail,
+                password: pass
+            });
+
+            if(error) {
+                errDiv.innerText = "❌ รหัสผ่านไม่ถูกต้อง";
+                errDiv.style.color = "#D32F2F";
+            } else {
+                document.getElementById('api-lock-screen').style.display = 'none';
+                document.getElementById('api-content-box').style.display = 'block';
+                loadAdminApiKey();
+            }
+        }
+
+        async function loadAdminApiKey() {
+            const { data } = await sb.from('settings').select('*').eq('key_name', 'gemini_api_key').single();
+            if(data && data.key_value) {
+                document.getElementById('admin-api-key').value = data.key_value;
+            }
         }
 
         async function saveAdminApiKey() {
@@ -282,15 +342,7 @@
             } else {
                 statusDiv.innerText = "✅ บันทึก API Key สำเร็จ!";
                 statusDiv.style.color = "#2E7D32";
-                document.getElementById('admin-api-key').value = '';
                 setTimeout(() => statusDiv.innerText = "", 4000);
-            }
-        }
-
-        async function loadAdminApiKey() {
-            const { data } = await sb.from('settings').select('*').eq('key_name', 'gemini_api_key').single();
-            if(data && data.key_value) {
-                document.getElementById('admin-api-key').placeholder = "🔑 มีการตั้งค่า API Key เรียบร้อยแล้ว (กรอกใหม่หากต้องการเปลี่ยน)";
             }
         }
 
