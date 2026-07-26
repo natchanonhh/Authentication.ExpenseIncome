@@ -81,13 +81,11 @@
         .btn-edit { background: #F39C12; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-right: 5px; }
         .btn-del { background: #E74C3C; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
 
-        .config-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 25px; max-width: 800px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .config-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 25px; max-width: 600px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         .config-box h3 { color: var(--bbl-blue); margin-bottom: 10px; }
         .config-box p { font-size: 0.9rem; color: #666; margin-bottom: 15px; }
-        .config-box input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; margin-bottom: 10px; font-family: monospace; }
-        .config-box button { background: var(--bbl-blue); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; margin-top: 15px; }
-        
-        .api-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .config-box input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; margin-bottom: 15px; font-family: monospace; }
+        .config-box button { background: var(--bbl-blue); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; }
     </style>
 </head>
 <body>
@@ -108,7 +106,7 @@
             <div class="tab-group">
                 <button class="tab-btn active" onclick="switchTab('tab-ledger')">📊 สมุดบัญชีรวม</button>
                 <button class="tab-btn" onclick="switchTab('tab-users')">👥 จัดการสมาชิก</button>
-                <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ ตั้งค่าคลัง API</button>
+                <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ ตั้งค่าระบบ AI</button>
                 <button class="btn-logout" onclick="doLogout()">🚪 ออกจากระบบ</button>
             </div>
         </div>
@@ -189,33 +187,22 @@
             </div>
         </div>
 
-        <!-- แท็บ 3: ตั้งค่าระบบ AI -->
+        <!-- แท็บ 3: ตั้งค่าระบบ AI (ยืนยันรหัสผ่านผ่าน Supabase Auth อีกครั้งก่อนดู) -->
         <div id="tab-settings" class="section">
-            <div id="api-lock-screen" class="config-box" style="text-align: center; margin: auto;">
+            <div id="api-lock-screen" class="config-box" style="text-align: center;">
                 <h3>🔒 ป้องกันความปลอดภัย</h3>
-                <p>กรุณากรอกรหัสผ่าน Supabase Authentication ของคุณอีกครั้ง เพื่อจัดการคลัง API Key</p>
+                <p>กรุณากรอกรหัสผ่าน Supabase Authentication ของคุณอีกครั้ง เพื่อดูหรือแก้ไข Gemini API Key</p>
                 <input type="password" id="recheck-pass" placeholder="กรอกรหัสผ่านของคุณที่นี่" style="text-align: center;">
                 <button onclick="verifyAdminPassword()">🔓 ยืนยันรหัสผ่านเพื่อเข้าถึง</button>
                 <div id="verify-err" style="color: #D32F2F; margin-top: 10px; font-weight: bold;"></div>
             </div>
 
-            <div id="api-content-box" class="config-box" style="display: none; margin: auto;">
-                <h3>🔑 ตั้งค่าคลัง Gemini API Key (สูงสุด 10 คีย์)</h3>
-                <p>ระบบจะดึงคีย์ไปใช้ทีละตัว หากคีย์ตัวใดโควต้าเต็ม จะสลับไปใช้คีย์ตัวถัดไปอัตโนมัติ (ไม่จำเป็นต้องใส่ครบ 10 ช่อง)</p>
-                <div class="api-grid">
-                    <input type="text" id="api-key-1" placeholder="API Key ตัวที่ 1">
-                    <input type="text" id="api-key-2" placeholder="API Key ตัวที่ 2">
-                    <input type="text" id="api-key-3" placeholder="API Key ตัวที่ 3">
-                    <input type="text" id="api-key-4" placeholder="API Key ตัวที่ 4">
-                    <input type="text" id="api-key-5" placeholder="API Key ตัวที่ 5">
-                    <input type="text" id="api-key-6" placeholder="API Key ตัวที่ 6">
-                    <input type="text" id="api-key-7" placeholder="API Key ตัวที่ 7">
-                    <input type="text" id="api-key-8" placeholder="API Key ตัวที่ 8">
-                    <input type="text" id="api-key-9" placeholder="API Key ตัวที่ 9">
-                    <input type="text" id="api-key-10" placeholder="API Key ตัวที่ 10">
-                </div>
-                <button onclick="saveAdminApiKey()">💾 บันทึกคลัง API Key ทั้งหมด</button>
-                <div id="save-status" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem; text-align: center;"></div>
+            <div id="api-content-box" class="config-box" style="display: none;">
+                <h3>🔑 ตั้งค่า Gemini API Key สำหรับระบบหลังบ้าน</h3>
+                <p>คุณสามารถดูและอัปเดต API Key ได้ที่นี่</p>
+                <input type="text" id="admin-api-key" placeholder="Gemini API Key ปัจจุบัน">
+                <button onclick="saveAdminApiKey()">💾 บันทึก API Key ใหม่</button>
+                <div id="save-status" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem;"></div>
             </div>
         </div>
     </div>
@@ -305,6 +292,7 @@
             }
         }
 
+        // 🔐 ตรวจสอบรหัสผ่านซ้ำผ่าน Supabase Auth ก่อนเปิดช่อง API Key
         async function verifyAdminPassword() {
             const pass = document.getElementById('recheck-pass').value.trim();
             const errDiv = document.getElementById('verify-err');
@@ -335,45 +323,26 @@
         async function loadAdminApiKey() {
             const { data } = await sb.from('settings').select('*').eq('key_name', 'gemini_api_key').single();
             if(data && data.key_value) {
-                // แยกข้อความด้วยเครื่องหมายลูกน้ำ
-                const keys = data.key_value.split(',');
-                for(let i=0; i<10; i++) {
-                    document.getElementById(`api-key-${i+1}`).value = keys[i] ? keys[i].trim() : '';
-                }
+                document.getElementById('admin-api-key').value = data.key_value;
             }
         }
 
         async function saveAdminApiKey() {
-            let activeKeys = [];
-            for(let i=1; i<=10; i++) {
-                let val = document.getElementById(`api-key-${i}`).value.trim();
-                if(val !== '') {
-                    activeKeys.push(val);
-                }
-            }
-
+            const keyVal = document.getElementById('admin-api-key').value.trim();
             const statusDiv = document.getElementById('save-status');
-            
-            if(activeKeys.length === 0) {
-                statusDiv.innerText = "❌ กรุณากรอก API Key อย่างน้อย 1 ช่อง";
-                statusDiv.style.color = "#D32F2F";
-                return;
-            }
-
-            // บันทึกรวมเป็น String ก้อนเดียวคั่นด้วยลูกน้ำ
-            const keyValJoined = activeKeys.join(',');
+            if(!keyVal) return alert('กรุณากรอก API Key');
 
             statusDiv.innerText = "⏳ กำลังบันทึก...";
             statusDiv.style.color = "var(--bbl-blue)";
 
-            const { error } = await sb.from('settings').upsert({ id: 1, key_name: 'gemini_api_key', key_value: keyValJoined });
+            const { error } = await sb.from('settings').upsert({ id: 1, key_name: 'gemini_api_key', key_value: keyVal });
             if(error) {
                 statusDiv.innerText = "❌ บันทึกไม่สำเร็จ: " + error.message;
                 statusDiv.style.color = "#D32F2F";
             } else {
-                statusDiv.innerText = `✅ บันทึกสำเร็จ! มี API Key ในคลังทั้งหมด ${activeKeys.length} ตัว`;
+                statusDiv.innerText = "✅ บันทึก API Key สำเร็จ!";
                 statusDiv.style.color = "#2E7D32";
-                setTimeout(() => statusDiv.innerText = "", 5000);
+                setTimeout(() => statusDiv.innerText = "", 4000);
             }
         }
 
