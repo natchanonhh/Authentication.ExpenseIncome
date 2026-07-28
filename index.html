@@ -17,7 +17,6 @@
         * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         
-        /* หน้า Login */
         .login-card { background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; border-top: 5px solid var(--bbl-orange); }
         .login-card h2 { color: var(--bbl-blue); margin-bottom: 25px; font-weight: 700; }
         .login-card input { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; outline: none; }
@@ -25,21 +24,10 @@
         .login-card button { width: 100%; padding: 12px; background: var(--bbl-blue); color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: opacity 0.2s; }
         .login-card button:hover { opacity: 0.9; }
 
-        /* แผงควบคุม Admin */
         .admin-card { display: none; width: 100%; max-width: 1200px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; margin: auto; }
         .admin-card.active { display: block; animation: fadeIn 0.4s ease-out; }
         
-        .admin-header { 
-            background: linear-gradient(135deg, var(--bbl-blue), #002270); 
-            color: white; 
-            padding: 25px 30px; 
-            border-bottom: 4px solid var(--bbl-orange); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            flex-wrap: wrap;
-            gap: 15px;
-        }
+        .admin-header { background: linear-gradient(135deg, var(--bbl-blue), #002270); color: white; padding: 25px 30px; border-bottom: 4px solid var(--bbl-orange); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
         .admin-header h1 { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         
         .tab-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -52,7 +40,6 @@
         .section.active { display: block; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* การ์ดสรุปยอด */
         .summary-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
         .summary-box { background: #f8f9fa; border-radius: 8px; padding: 15px 20px; border-left: 5px solid var(--bbl-blue); box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .summary-box.income { border-left-color: #2E7D32; }
@@ -61,12 +48,10 @@
         .summary-title { font-size: 0.85rem; color: #666; margin-bottom: 5px; font-weight: 600; }
         .summary-value { font-size: 1.3rem; font-weight: 700; font-family: monospace; }
 
-        /* ตัวกรอง */
         .bank-filter { display: flex; gap: 12px; margin-bottom: 25px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eaeaea; flex-wrap: wrap; }
         .bank-filter select { padding: 10px 15px; font-size: 0.95rem; border: 1px solid #ccc; color: var(--bbl-blue); font-weight: bold; border-radius: 6px; background: white; outline: none; }
         .bank-filter button { padding: 10px 20px; background: var(--bbl-orange); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
 
-        /* ตาราง */
         .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid #eaeaea; }
         table { width: 100%; border-collapse: collapse; background: white; text-align: left; }
         th, td { padding: 12px 16px; font-size: 0.9rem; border-bottom: 1px solid #eee; }
@@ -80,6 +65,10 @@
 
         .btn-edit { background: #F39C12; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-right: 5px; }
         .btn-del { background: #E74C3C; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+
+        /* สไตล์ปุ่ม Toggle ของหอพัก */
+        .btn-toggle-on { background: #2E7D32; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+        .btn-toggle-off { background: #7f8c8d; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
 
         .config-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 25px; max-width: 600px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         .config-box h3 { color: var(--bbl-blue); margin-bottom: 10px; }
@@ -176,9 +165,10 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:10%">ลำดับ</th>
-                            <th style="width:35%; text-align: left; padding-left: 20px;">ชื่อผู้ใช้งาน (Username)</th>
-                            <th style="width:25%">รหัสผ่าน (PIN)</th>
+                            <th style="width:5%">ลำดับ</th>
+                            <th style="width:25%; text-align: left; padding-left: 20px;">ชื่อผู้ใช้งาน</th>
+                            <th style="width:20%">รหัสผ่าน (PIN)</th>
+                            <th style="width:20%">ระบบหอพัก</th>
                             <th style="width:30%">จัดการข้อมูล</th>
                         </tr>
                     </thead>
@@ -187,7 +177,7 @@
             </div>
         </div>
 
-        <!-- แท็บ 3: ตั้งค่าระบบ AI (ยืนยันรหัสผ่านผ่าน Supabase Auth อีกครั้งก่อนดู) -->
+        <!-- แท็บ 3: ตั้งค่าระบบ AI -->
         <div id="tab-settings" class="section">
             <div id="api-lock-screen" class="config-box" style="text-align: center;">
                 <h3>🔒 ป้องกันความปลอดภัย</h3>
@@ -213,6 +203,23 @@
         const sb = supabase.createClient(SB_URL, SB_KEY);
         
         let currentAdminEmail = "";
+        let adminLogoutTimer;
+
+        // --- ระบบ Auto Logout สำหรับ Admin (5 ชั่วโมง) ---
+        function resetAdminLogoutTimer() {
+            clearTimeout(adminLogoutTimer);
+            adminLogoutTimer = setTimeout(() => {
+                if (currentAdminEmail) {
+                    alert("เซสชัน Admin หมดอายุเนื่องจากไม่มีการใช้งานเป็นเวลา 5 ชั่วโมง ระบบได้ทำการล็อกเอาท์อัตโนมัติ");
+                    doLogout();
+                }
+            }, 5 * 60 * 60 * 1000); 
+        }
+
+        window.addEventListener('mousemove', resetAdminLogoutTimer);
+        window.addEventListener('keypress', resetAdminLogoutTimer);
+        window.addEventListener('click', resetAdminLogoutTimer);
+        window.addEventListener('scroll', resetAdminLogoutTimer);
 
         if (localStorage.getItem('admin_logged') === 'true') {
             currentAdminEmail = localStorage.getItem('admin_email') || "";
@@ -253,6 +260,7 @@
             document.getElementById('admin-main').classList.add('active');
             setupAdminDateFilters();
             refreshData();
+            resetAdminLogoutTimer();
         }
 
         async function doLogout() {
@@ -290,9 +298,9 @@
                 document.getElementById('recheck-pass').value = '';
                 document.getElementById('verify-err').innerText = '';
             }
+            resetAdminLogoutTimer();
         }
 
-        // 🔐 ตรวจสอบรหัสผ่านซ้ำผ่าน Supabase Auth ก่อนเปิดช่อง API Key
         async function verifyAdminPassword() {
             const pass = document.getElementById('recheck-pass').value.trim();
             const errDiv = document.getElementById('verify-err');
@@ -356,15 +364,18 @@
 
             if(data) {
                 data.forEach(i => {
-                    const amt = parseFloat(i.amount);
-                    if(i.type === 'income') { rBalance += amt; totalIncome += amt; }
-                    else { rBalance -= amt; totalExpense += amt; }
-                    i.balance = rBalance;
+                    // กรองเฉพาะรายรับและรายจ่ายรวม (ไม่เอารายการย่อยหอพักมาคำนวณซ้ำซ้อน)
+                    if (i.type === 'income' || i.type === 'expense') {
+                        const amt = parseFloat(i.amount);
+                        if(i.type === 'income') { rBalance += amt; totalIncome += amt; }
+                        else { rBalance -= amt; totalExpense += amt; }
+                        i.balance = rBalance;
 
-                    const [y, m, d] = i.date.split('-');
-                    let matchMonth = (selMonth === 'all') || (m === selMonth);
-                    let matchYear = (selYear === 'all') || (y === selYear);
-                    if(matchMonth && matchYear) filteredData.push(i);
+                        const [y, m, d] = i.date.split('-');
+                        let matchMonth = (selMonth === 'all') || (m === selMonth);
+                        let matchYear = (selYear === 'all') || (y === selYear);
+                        if(matchMonth && matchYear) filteredData.push(i);
+                    }
                 });
             }
 
@@ -399,17 +410,38 @@
         async function loadUsers() {
             const { data } = await sb.from('users').select('*').order('id', {ascending: true});
             if(!data) return;
-            document.getElementById('users-body').innerHTML = data.map((u, idx) => `
-                <tr>
+            document.getElementById('users-body').innerHTML = data.map((u, idx) => {
+                
+                // ตรวจสอบค่า boolean ของระบบหอพัก
+                const isDormActive = u.dormitory_active === true;
+                const dormBtn = isDormActive 
+                    ? `<button class="btn-toggle-on" onclick="toggleDormStatus('${u.username}', false)">✅ เปิด</button>` 
+                    : `<button class="btn-toggle-off" onclick="toggleDormStatus('${u.username}', true)">❌ ปิด</button>`;
+
+                return `<tr>
                     <td style="color: #666;">${idx + 1}</td>
                     <td style="text-align: left; padding-left: 20px;"><strong>${u.username}</strong></td>
                     <td style="font-family: monospace; letter-spacing: 2px;">${u.pin}</td>
+                    <td>${dormBtn}</td>
                     <td>
                         <button class="btn-edit" onclick="editUser('${u.username}', '${u.pin}')">✏️ แก้ไข PIN</button>
                         <button class="btn-del" onclick="deleteUser('${u.username}')">🗑️ ลบ</button>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
+        }
+
+        // --- ระบบเปิด-ปิดสิทธิ์หอพัก ---
+        async function toggleDormStatus(username, newStatus) {
+            const statusText = newStatus ? "เปิด" : "ปิด";
+            if(confirm(`คุณต้องการ ${statusText} สิทธิ์การเข้าถึงระบบหอพักสำหรับผู้ใช้ "${username}" ใช่หรือไม่?`)) {
+                const { error } = await sb.from('users').update({ dormitory_active: newStatus }).eq('username', username);
+                if (error) {
+                    alert('เกิดข้อผิดพลาด: โปรดตรวจสอบว่ามี Column: dormitory_active (boolean) ในตาราง users');
+                } else {
+                    loadUsers();
+                }
+            }
         }
 
         async function editUser(username, oldPin) {
