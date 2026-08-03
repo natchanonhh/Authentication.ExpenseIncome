@@ -2,466 +2,768 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCHOOL MONEY - Admin Console</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบบริหารจัดการ (Admin Console)</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         :root { 
             --bbl-blue: #0033A0; 
             --bbl-orange: #F37021; 
-            --bg-color: #F4F6F9;
-            --card-bg: #FFFFFF;
+            --bg-color: #F4F5F7;
             --text-main: #333333;
+            --success: #2E7D32;
+            --danger: #D32F2F;
         }
+        
         * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; }
-        body { background: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        body { background: var(--bg-color); display: flex; flex-direction: column; align-items: center; min-height: 100vh; color: var(--text-main); }
         
-        .login-card { background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; border-top: 5px solid var(--bbl-orange); }
-        .login-card h2 { color: var(--bbl-blue); margin-bottom: 25px; font-weight: 700; }
-        .login-card input { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; outline: none; }
-        .login-card input:focus { border-color: var(--bbl-blue); }
-        .login-card button { width: 100%; padding: 12px; background: var(--bbl-blue); color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: opacity 0.2s; }
-        .login-card button:hover { opacity: 0.9; }
+        /* Login Screen */
+        #login-scr { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); justify-content: center; align-items: center; z-index: 9999; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .login-card h2 { color: var(--bbl-blue); font-weight: 700; margin-bottom: 20px; font-size: 1.5rem; }
+        .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; text-align: center; }
+        .login-card input:focus { outline: none; border-color: var(--bbl-blue); }
+        .btn-primary { width: 100%; padding: 12px; background: var(--bbl-blue); color: white; border: none; border-radius: 6px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+        .btn-primary:hover { opacity: 0.9; }
 
-        .admin-card { display: none; width: 100%; max-width: 1200px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; margin: auto; }
-        .admin-card.active { display: block; animation: fadeIn 0.4s ease-out; }
+        /* Main Admin Layout */
+        #admin-main { display: none; width: 100%; max-width: 1100px; padding: 20px; flex-direction: column; gap: 20px; }
         
-        .admin-header { background: linear-gradient(135deg, var(--bbl-blue), #002270); color: white; padding: 25px 30px; border-bottom: 4px solid var(--bbl-orange); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
-        .admin-header h1 { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        /* Navbar */
+        .navbar { background: var(--bbl-blue); border-radius: 8px; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .nav-brand { color: white; font-weight: 700; font-size: 1.3rem; display: flex; align-items: center; gap: 10px; }
+        .nav-menu { display: flex; gap: 8px; flex-wrap: wrap; }
+        .nav-btn { background: transparent; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; font-size: 1rem; }
+        .nav-btn:hover { background: rgba(255,255,255,0.15); }
+        .nav-btn.active { background: white; color: var(--bbl-blue); }
+        .nav-btn.logout { background: #D32F2F; color: white; }
+        .nav-btn.logout:hover { background: #b71c1c; }
+
+        /* Cards & Content */
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .card-header { font-size: 1.3rem; font-weight: 700; color: var(--bbl-blue); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #eee; padding-bottom: 12px;}
         
-        .tab-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        .tab-btn { background: rgba(255,255,255,0.15); color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.3s ease; }
-        .tab-btn:hover { background: rgba(255,255,255,0.25); }
-        .tab-btn.active { background: white; color: var(--bbl-blue); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-        .btn-logout { background: #E74C3C; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+        /* Summary Boxes (Ledger) */
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .sum-box { background: white; padding: 20px; border-radius: 8px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .sum-box.income { border-left: 5px solid var(--success); }
+        .sum-box.expense { border-left: 5px solid var(--danger); }
+        .sum-box.balance { border-left: 5px solid var(--bbl-orange); }
+        .sum-title { font-size: 0.9rem; color: #666; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+        .sum-val { font-size: 1.8rem; font-weight: 700; }
+        .sum-val.income { color: var(--success); }
+        .sum-val.expense { color: var(--danger); }
+        .sum-val.balance { color: var(--bbl-blue); }
+
+        /* Filters */
+        .filter-bar { background: #fafafa; padding: 15px 20px; border-radius: 8px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; border: 1px solid #eee; }
+        .filter-bar select, .filter-bar input { padding: 10px 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; outline: none; }
+        .btn-search { background: var(--bbl-orange); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-search:hover { opacity: 0.9; }
+
+        /* Sub Tabs */
+        .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .sub-tab-btn { padding: 10px 25px; border: 2px solid var(--bbl-blue); background: white; color: var(--bbl-blue); border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
+        .sub-tab-btn.active { background: var(--bbl-blue); color: white; }
+
+        /* Tables */
+        .table-wrapper { overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; font-size: 0.95rem; }
+        th, td { padding: 15px 10px; text-align: center; border-bottom: 1px solid #eee; }
+        th { background: #f9f9f9; color: #333; font-weight: 600; border-top: 1px solid #ddd; border-bottom: 2px solid #ddd; }
+        tr:hover { background: #fdfdfd; }
+        .text-left { text-align: left; }
         
-        .section { display: none; padding: 25px 30px; }
-        .section.active { display: block; animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .user-col { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--bbl-blue); }
+        .user-icon { font-size: 18px; }
 
-        .summary-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .summary-box { background: #f8f9fa; border-radius: 8px; padding: 15px 20px; border-left: 5px solid var(--bbl-blue); box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .summary-box.income { border-left-color: #2E7D32; }
-        .summary-box.expense { border-left-color: #D32F2F; }
-        .summary-box.balance { border-left-color: var(--bbl-orange); }
-        .summary-title { font-size: 0.85rem; color: #666; margin-bottom: 5px; font-weight: 600; }
-        .summary-value { font-size: 1.3rem; font-weight: 700; font-family: monospace; }
-
-        .bank-filter { display: flex; gap: 12px; margin-bottom: 25px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eaeaea; flex-wrap: wrap; }
-        .bank-filter select { padding: 10px 15px; font-size: 0.95rem; border: 1px solid #ccc; color: var(--bbl-blue); font-weight: bold; border-radius: 6px; background: white; outline: none; }
-        .bank-filter button { padding: 10px 20px; background: var(--bbl-orange); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
-
-        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid #eaeaea; }
-        table { width: 100%; border-collapse: collapse; background: white; text-align: left; }
-        th, td { padding: 12px 16px; font-size: 0.9rem; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #444; font-weight: 700; text-align: center; }
-        td { text-align: center; }
-        tr:hover { background: #fafbfc; }
-        .col-amt { text-align: right !important; font-family: monospace; font-size: 1rem; }
+        /* Action Buttons & Badges */
+        .btn-sm { padding: 8px 15px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: bold; cursor: pointer; color: white; transition: 0.2s;}
+        .btn-edit { background: var(--bbl-orange); }
+        .btn-del { background: var(--danger); }
+        .btn-sm:hover { opacity: 0.8; }
         
-        .badge-income { color: #2E7D32; background: #E8F5E9; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        .badge-expense { color: #D32F2F; background: #FFEBEE; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .status-badge { padding: 6px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; display: inline-block; }
+        .status-on { background: #E8F5E9; color: #2E7D32; border: 1px solid #2E7D32; }
+        .status-off { background: #FFEBEE; color: #D32F2F; border: 1px solid #D32F2F; }
 
-        .btn-edit { background: #F39C12; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-right: 5px; }
-        .btn-del { background: #E74C3C; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; margin: 0 auto; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2E7D32; }
+        input:checked + .slider:before { transform: translateX(24px); }
 
-        /* สไตล์ปุ่ม Toggle ของหอพัก */
-        .btn-toggle-on { background: #2E7D32; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-        .btn-toggle-off { background: #7f8c8d; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+        /* AI Security Box */
+        .security-box { max-width: 500px; margin: 0 auto; text-align: center; border: 1px solid #eee; padding: 40px; border-radius: 12px; background: #fafafa; }
+        .security-box svg { width: 60px; height: 60px; fill: #D32F2F; margin-bottom: 20px; }
 
-        .config-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 25px; max-width: 600px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-        .config-box h3 { color: var(--bbl-blue); margin-bottom: 10px; }
-        .config-box p { font-size: 0.9rem; color: #666; margin-bottom: 15px; }
-        .config-box input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; margin-bottom: 15px; font-family: monospace; }
-        .config-box button { background: var(--bbl-blue); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; }
     </style>
 </head>
 <body>
 
-    <!-- 🔒 หน้า Login สำหรับแอดมิน -->
-    <div id="login-section" class="login-card">
-        <h2>🔐 เข้าสู่ระบบ Admin</h2>
-        <input type="email" id="admin-user" placeholder="อีเมลแอดมิน (Email)">
-        <input type="password" id="admin-pass" placeholder="รหัสผ่าน (Password)">
-        <button onclick="doAdminLogin()">เข้าสู่ระบบ</button>
-        <div id="login-err" style="color: #D32F2F; margin-top: 10px; font-size: 0.9rem; font-weight: bold;"></div>
+    <!-- หน้า Login แอดมิน -->
+    <div id="login-scr">
+        <div class="login-card">
+            <h2>ระบบบริหารจัดการ (Admin Console)</h2>
+            <input type="email" id="adminEmail" placeholder="อีเมลผู้ดูแลระบบ...">
+            <input type="password" id="adminPassword" placeholder="รหัสผ่าน...">
+            <button class="btn-primary" onclick="loginAdmin()">เข้าสู่ระบบ</button>
+            <p id="loginError" style="color:var(--danger); display:none; margin-top:15px; font-weight:600; font-size: 0.95rem;">อีเมลหรือรหัสผ่านไม่ถูกต้อง</p>
+        </div>
     </div>
 
-    <!-- 📊 หน้า Dashboard หลักของแอดมิน -->
-    <div id="admin-main" class="admin-card">
-        <div class="admin-header">
-            <h1>🏦 ระบบบริหารจัดการ (Admin Console)</h1>
-            <div class="tab-group">
-                <button class="tab-btn active" onclick="switchTab('tab-ledger')">📊 สมุดบัญชีรวม</button>
-                <button class="tab-btn" onclick="switchTab('tab-users')">👥 จัดการสมาชิก</button>
-                <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ ตั้งค่าระบบ AI</button>
-                <button class="btn-logout" onclick="doLogout()">🚪 ออกจากระบบ</button>
-            </div>
-        </div>
+    <!-- ส่วน Admin Main -->
+    <div id="admin-main">
         
-        <!-- แท็บ 1: สมุดบัญชีรวม -->
-        <div id="tab-ledger" class="section active">
-            <div class="summary-container">
-                <div class="summary-box income">
-                    <div class="summary-title">🟢 ยอดรับรวมทั้งหมด</div>
-                    <div class="summary-value" id="sum-income" style="color: #2E7D32;">0.00 ฿</div>
+        <!-- Navbar -->
+        <div class="navbar">
+            <div class="nav-brand">
+                <span style="font-size: 1.5rem;">🏛️</span> ระบบบริหารจัดการ (Admin Console)
+            </div>
+            <div class="nav-menu">
+                <button class="nav-btn active" onclick="switchTab('tab-ledger')" id="btn-tab-ledger">📊 สมุดบัญชีรวม</button>
+                <button class="nav-btn" onclick="switchTab('tab-members')" id="btn-tab-members">👥 จัดการสมาชิก</button>
+                <button class="nav-btn" onclick="switchTab('tab-ai')" id="btn-tab-ai">⚙️ ตั้งค่าระบบ AI</button>
+                <button class="nav-btn" onclick="switchTab('tab-banner')" id="btn-tab-banner">🖼️ จัดการโฆษณา</button>
+                <button class="nav-btn logout" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
+            </div>
+        </div>
+
+        <!-- แท็บที่ 1: สมุดบัญชีรวม -->
+        <div id="tab-ledger" class="card" style="display: block;">
+            
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" id="btn-sub-inc" onclick="switchLedgerType('income_expense')">ระบบรายรับ-รายจ่าย</button>
+                <button class="sub-tab-btn" id="btn-sub-dorm" onclick="switchLedgerType('dormitory')">ระบบค่าหอพัก</button>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-grid" id="sum-inc-exp" style="display: grid;">
+                <div class="sum-box income">
+                    <div class="sum-title">🟢 ยอดรับรวมทั้งหมด</div>
+                    <div class="sum-val income" id="totalInc">0.00 ฿</div>
                 </div>
-                <div class="summary-box expense">
-                    <div class="summary-title">🔴 ยอดจ่ายรวมทั้งหมด</div>
-                    <div class="summary-value" id="sum-expense" style="color: #D32F2F;">0.00 ฿</div>
+                <div class="sum-box expense">
+                    <div class="sum-title">🔴 ยอดจ่ายรวมทั้งหมด</div>
+                    <div class="sum-val expense" id="totalExp">0.00 ฿</div>
                 </div>
-                <div class="summary-box balance">
-                    <div class="summary-title">💰 ยอดเงินคงเหลือสุทธิ</div>
-                    <div class="summary-value" id="sum-balance" style="color: var(--bbl-blue);">0.00 ฿</div>
+                <div class="sum-box balance">
+                    <div class="sum-title">💰 ยอดเงินคงเหลือสุทธิ</div>
+                    <div class="sum-val balance" id="totalBal">0.00 ฿</div>
                 </div>
             </div>
 
-            <div class="bank-filter">
-                <span style="font-weight:600; color:var(--bbl-blue);">📅 เลือกดูรายงานประจำเดือน:</span>
-                <select id="admin-month">
-                    <option value="all">รวมทุกเดือน</option>
-                    <option value="01">มกราคม</option>
-                    <option value="02">กุมภาพันธ์</option>
-                    <option value="03">มีนาคม</option>
-                    <option value="04">เมษายน</option>
-                    <option value="05">พฤษภาคม</option>
-                    <option value="06">มิถุนายน</option>
-                    <option value="07">กรกฎาคม</option>
-                    <option value="08">สิงหาคม</option>
-                    <option value="09">กันยายน</option>
-                    <option value="10">ตุลาคม</option>
-                    <option value="11">พฤศจิกายน</option>
-                    <option value="12">ธันวาคม</option>
+            <div class="summary-grid" id="sum-dorm" style="display: none;">
+                <div class="sum-box income" style="border-left-color: var(--bbl-blue);">
+                    <div class="sum-title">🏢 ยอดชำระค่าหอพักรวมทั้งหมด</div>
+                    <div class="sum-val balance" id="totalDorm" style="color: var(--bbl-blue);">0.00 ฿</div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <span style="font-weight: 600; font-size: 1.1rem;">📅 เลือกระบุข้อมูล:</span>
+                <select id="filter-user">
+                    <option value="all">ดูข้อมูลสมาชิกทั้งหมด</option>
                 </select>
-                <select id="admin-year"></select>
-                <button onclick="refreshData()">🔍 ค้นหาข้อมูล</button>
+                <select id="filter-month">
+                    <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option>
+                    <option value="03">มีนาคม</option><option value="04">เมษายน</option>
+                    <option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
+                    <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option>
+                    <option value="09">กันยายน</option><option value="10">ตุลาคม</option>
+                    <option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+                </select>
+                <select id="filter-year"></select>
+                <button class="btn-search" onclick="fetchTransactions()">🔍 ค้นหาข้อมูล</button>
             </div>
 
-            <div class="table-container">
+            <!-- Table Income/Expense -->
+            <div class="table-wrapper" id="table-inc-exp" style="display: block;">
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="width:12%">วัน เดือน ปี</th>
-                            <th rowspan="2" style="width:22%; text-align: left; padding-left: 20px;">รายการ (ชื่อผู้ใช้)</th>
-                            <th colspan="2">ยอดเงิน (บาท)</th>
-                            <th rowspan="2" class="col-amt" style="width:18%">คงเหลือ (บาท)</th>
-                            <th rowspan="2" style="width:18%; text-align: left;">หมายเหตุ</th>
+                            <th rowspan="2" width="15%">วัน เดือน ปี</th>
+                            <th rowspan="2" width="20%">รายการ (ชื่อผู้ใช้)</th>
+                            <th colspan="2" style="border-bottom: 1px solid #ddd;">ยอดเงิน (บาท)</th>
+                            <th rowspan="2" width="15%">คงเหลือ (บาท)</th>
+                            <th rowspan="2" width="25%">หมายเหตุ</th>
                         </tr>
                         <tr>
-                            <th style="background:#E8F5E9; width:14%">รายรับ</th>
-                            <th style="background:#FFEBEE; width:14%">รายจ่าย</th>
+                            <th style="background:#E8F5E9; color:#2E7D32;">รายรับ</th>
+                            <th style="background:#FFEBEE; color:#D32F2F;">รายจ่าย</th>
                         </tr>
                     </thead>
-                    <tbody id="data-body"></tbody>
+                    <tbody id="tbody-inc-exp"></tbody>
+                </table>
+            </div>
+
+            <!-- Table Dormitory -->
+            <div class="table-wrapper" id="table-dorm" style="display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="10%">วัน เดือน ปี</th>
+                            <th width="15%">รายการ (ชื่อผู้ใช้)</th>
+                            <th width="10%">ค่าหอพัก</th>
+                            <th width="10%">ค่าน้ำ</th>
+                            <th width="10%">ค่าไฟ</th>
+                            <th width="15%">ยอดรวมชำระ</th>
+                            <th width="15%">บาร์โค้ด</th>
+                            <th width="15%">หมายเหตุ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-dorm"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- แท็บ 2: จัดการสมาชิก -->
-        <div id="tab-users" class="section">
-            <h3 style="color:var(--bbl-blue); margin-bottom:15px; font-size: 1.2rem;">👥 รายชื่อสมาชิกทั้งหมดในระบบ</h3>
-            <div class="table-container">
+        <!-- แท็บที่ 2: จัดการสมาชิก -->
+        <div id="tab-members" class="card" style="display: none;">
+            <div class="card-header">👥 รายชื่อสมาชิกทั้งหมดในระบบ</div>
+            
+            <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:5%">ลำดับ</th>
-                            <th style="width:25%; text-align: left; padding-left: 20px;">ชื่อผู้ใช้งาน</th>
-                            <th style="width:20%">รหัสผ่าน (PIN)</th>
-                            <th style="width:20%">ระบบหอพัก</th>
-                            <th style="width:30%">จัดการข้อมูล</th>
+                            <th width="10%">ลำดับ</th>
+                            <th width="20%">ชื่อผู้ใช้งาน</th>
+                            <th width="15%">รหัสผ่าน (PIN)</th>
+                            <th width="15%">สิทธิ์รายรับ-รายจ่าย</th>
+                            <th width="15%">สิทธิ์ระบบหอพัก</th>
+                            <th width="25%">จัดการข้อมูล</th>
                         </tr>
                     </thead>
-                    <tbody id="users-body"></tbody>
+                    <tbody id="tbody-members"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- แท็บ 3: ตั้งค่าระบบ AI -->
-        <div id="tab-settings" class="section">
-            <div id="api-lock-screen" class="config-box" style="text-align: center;">
-                <h3>🔒 ป้องกันความปลอดภัย</h3>
-                <p>กรุณากรอกรหัสผ่าน Supabase Authentication ของคุณอีกครั้ง เพื่อดูหรือแก้ไข Gemini API Key</p>
-                <input type="password" id="recheck-pass" placeholder="กรอกรหัสผ่านของคุณที่นี่" style="text-align: center;">
-                <button onclick="verifyAdminPassword()">🔓 ยืนยันรหัสผ่านเพื่อเข้าถึง</button>
-                <div id="verify-err" style="color: #D32F2F; margin-top: 10px; font-weight: bold;"></div>
+        <!-- แท็บที่ 3: ตั้งค่าระบบ AI -->
+        <div id="tab-ai" class="card" style="display: none;">
+            <div class="card-header">⚙️ ตั้งค่าระบบ AI (Gemini API)</div>
+            
+            <div id="ai-security-check" class="security-box">
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                <h3 style="color:var(--bbl-blue); margin-bottom:10px;">ป้องกันความปลอดภัย</h3>
+                <p style="color:#666; font-size:15px; margin-bottom:25px;">กรุณากรอกรหัสผ่าน Supabase Authentication ของคุณอีกครั้ง เพื่อดูหรือแก้ไข Gemini API Key</p>
+                <input type="password" id="securityPassword" placeholder="กรอกรหัสผ่านของคุณที่นี่" style="text-align:center; max-width: 300px; margin: 0 auto 15px; display: block;">
+                <button class="btn-primary" style="max-width: 300px;" onclick="verifyAdminForAI()">🔒 ยืนยันรหัสผ่านเพื่อเข้าถึง</button>
+                <p id="secError" style="color:var(--danger); display:none; margin-top:15px; font-size:15px; font-weight:bold;">รหัสผ่านไม่ถูกต้อง</p>
             </div>
 
-            <div id="api-content-box" class="config-box" style="display: none;">
-                <h3>🔑 ตั้งค่า Gemini API Key สำหรับระบบหลังบ้าน</h3>
-                <p>คุณสามารถดูและอัปเดต API Key ได้ที่นี่</p>
-                <input type="text" id="admin-api-key" placeholder="Gemini API Key ปัจจุบัน">
-                <button onclick="saveAdminApiKey()">💾 บันทึก API Key ใหม่</button>
-                <div id="save-status" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem;"></div>
+            <div id="ai-settings-form" style="display: none; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <label style="font-size: 1.1rem;">Gemini API Key ปัจจุบัน:</label>
+                <input type="text" id="geminiApiKey" placeholder="AIzaSy..." style="margin-bottom: 5px;">
+                <p style="font-size:14px; color:#888; margin-top:5px; margin-bottom: 25px;">* หมายเหตุ: ระบบจะใช้โมเดลเดิมไม่เปลี่ยนแปลง</p>
+                
+                <button class="btn-primary" onclick="saveApiKey()">💾 บันทึก API Key</button>
             </div>
         </div>
+
+        <!-- แท็บที่ 4: จัดการแบนเนอร์โฆษณา -->
+        <div id="tab-banner" class="card" style="display: none;">
+            <div class="card-header" style="color: #2E7D32;">🖼️ จัดการป้ายโฆษณา (ระบบประกาศค่าหอพัก)</div>
+            <p style="color:#666; font-size:15px; margin-bottom:20px;">
+                💡 ป้ายโฆษณาจะแสดงในหน้าระบบ "ประกาศค่าหอพัก"<br>
+                <strong style="color:var(--bbl-blue);">เคล็ดลับ: สามารถคลิกค้างที่ตารางด้านล่างแล้วลากเพื่อสลับตำแหน่งแสดงผลป้ายโฆษณาได้ทันที</strong>
+            </p>
+            
+            <input type="hidden" id="editBannerId">
+            <div style="background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 25px;">
+                <label style="margin-top: 0;">1. ลิงก์รูปภาพ (Image URL):</label>
+                <input type="text" id="bannerImageUrl" placeholder="https://..." required>
+                
+                <label>2. ลิงก์ปลายทาง (URL เมื่อคลิกป้าย - เว้นว่างได้):</label>
+                <input type="text" id="bannerLinkUrl" placeholder="https://...">
+
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button class="btn-primary" id="btnSaveBanner" style="background:#2E7D32; margin-top:0;" onclick="saveBanner()">เพิ่มป้ายโฆษณา</button>
+                    <button class="btn-primary" id="btnCancelBanner" style="background:#888; display:none; margin-top:0;" onclick="cancelEditBanner()">ยกเลิกการแก้ไข</button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="bannersTable"></table>
+            </div>
+        </div>
+
     </div>
 
+    <!-- สคริปต์ควบคุมระบบหลังบ้าน -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // เชื่อมต่อ Firebase Auth (สำหรับล็อกอิน Admin)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLyMpowfyQK_1UnredPFmXdBdtQZKpY-c",
+            authDomain: "datapdf-d14d0.firebaseapp.com",
+            projectId: "datapdf-d14d0",
+            storageBucket: "datapdf-d14d0.firebasestorage.app",
+            messagingSenderId: "1034739093928",
+            appId: "1:1034739093928:web:cd56cc0e208d7d00f24d9d"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // ฟังก์ชัน Login Admin
+        window.loginAdmin = function() {
+            const email = document.getElementById("adminEmail").value;
+            const pwd = document.getElementById("adminPassword").value;
+            const errorMsg = document.getElementById("loginError");
+
+            if (!email || !pwd) {
+                errorMsg.innerText = "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน";
+                errorMsg.style.display = "block";
+                return;
+            }
+            errorMsg.style.display = "none";
+            document.querySelector("#login-scr button").innerText = "กำลังตรวจสอบ...";
+            
+            signInWithEmailAndPassword(auth, email, pwd)
+                .then(() => { document.querySelector("#login-scr button").innerText = "เข้าสู่ระบบ"; })
+                .catch(() => {
+                    document.querySelector("#login-scr button").innerText = "เข้าสู่ระบบ";
+                    errorMsg.innerText = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+                    errorMsg.style.display = "block";
+                });
+        }
+
+        window.logoutAdmin = function() {
+            if (confirm("ต้องการออกจากระบบผู้ดูแลหรือไม่?")) {
+                signOut(auth).then(() => { window.location.reload(); });
+            }
+        }
+
+        // ตรวจสอบการยืนยันรหัสผ่านเพื่อตั้งค่า AI
+        window.verifyAdminForAI = function() {
+            const pwd = document.getElementById("securityPassword").value;
+            const email = auth.currentUser?.email;
+            if(!pwd || !email) return;
+
+            signInWithEmailAndPassword(auth, email, pwd).then(() => {
+                document.getElementById('ai-security-check').style.display = 'none';
+                document.getElementById('ai-settings-form').style.display = 'block';
+                document.getElementById("securityPassword").value = "";
+                document.getElementById("secError").style.display = "none";
+                window.loadApiKey();
+            }).catch(() => {
+                document.getElementById("secError").style.display = "block";
+            });
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById("login-scr").style.display = "none";
+                document.getElementById("admin-main").style.display = "flex";
+                window.initAdminSystem();
+            } else {
+                document.getElementById("login-scr").style.display = "flex";
+                document.getElementById("admin-main").style.display = "none";
+            }
+        });
+
+        document.getElementById("adminPassword").addEventListener("keypress", e => { if (e.key === "Enter") loginAdmin(); });
+        document.getElementById("securityPassword").addEventListener("keypress", e => { if (e.key === "Enter") verifyAdminForAI(); });
+    </script>
+
+    <!-- สคริปต์เชื่อมต่อ Supabase เพื่อจัดการข้อมูลหน้าแอดมิน -->
     <script>
         const SB_URL = 'https://nnxraimetlwvsekburkm.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ueHJhaW1ldGx3dnNla2J1cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5ODEyMjgsImV4cCI6MjEwMDU1NzIyOH0.6fGLFjKsKO94EVf3B_es1P-ImXnkcreC3zRKxiaDEiM';
-        const sb = supabase.createClient(SB_URL, SB_KEY);
-        
-        let currentAdminEmail = "";
-        let adminLogoutTimer;
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-        // --- ระบบ Auto Logout สำหรับ Admin (5 ชั่วโมง) ---
-        function resetAdminLogoutTimer() {
-            clearTimeout(adminLogoutTimer);
-            adminLogoutTimer = setTimeout(() => {
-                if (currentAdminEmail) {
-                    alert("เซสชัน Admin หมดอายุเนื่องจากไม่มีการใช้งานเป็นเวลา 5 ชั่วโมง ระบบได้ทำการล็อกเอาท์อัตโนมัติ");
-                    doLogout();
-                }
-            }, 5 * 60 * 60 * 1000); 
-        }
+        let currentLedgerType = 'income_expense'; 
+        let adminBanners = [];
 
-        window.addEventListener('mousemove', resetAdminLogoutTimer);
-        window.addEventListener('keypress', resetAdminLogoutTimer);
-        window.addEventListener('click', resetAdminLogoutTimer);
-        window.addEventListener('scroll', resetAdminLogoutTimer);
+        // ตั้งค่าเริ่มต้นของ Admin Panel
+        window.initAdminSystem = function() {
+            setupYearDropdown();
+            loadUserOptions();
+            fetchTransactions();
+            fetchUsers();
+            loadBanners();
+        };
 
-        if (localStorage.getItem('admin_logged') === 'true') {
-            currentAdminEmail = localStorage.getItem('admin_email') || "";
-            showAdminDashboard();
-        }
-
-        async function doAdminLogin() {
-            const email = document.getElementById('admin-user').value.trim();
-            const password = document.getElementById('admin-pass').value.trim();
-            const errDiv = document.getElementById('login-err');
-
-            if(!email || !password) {
-                errDiv.innerText = "กรุณากรอกอีเมลและรหัสผ่าน";
-                return;
-            }
-
-            errDiv.innerText = "⏳ กำลังตรวจสอบ...";
-            errDiv.style.color = "var(--bbl-blue)";
-
-            const { data, error } = await sb.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
-            
-            if (error) {
-                errDiv.innerText = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
-                errDiv.style.color = "#D32F2F";
-            } else {
-                localStorage.setItem('admin_logged', 'true');
-                localStorage.setItem('admin_email', email);
-                currentAdminEmail = email;
-                showAdminDashboard();
-            }
-        }
-
-        function showAdminDashboard() {
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('admin-main').classList.add('active');
-            setupAdminDateFilters();
-            refreshData();
-            resetAdminLogoutTimer();
-        }
-
-        async function doLogout() {
-            await sb.auth.signOut();
-            localStorage.removeItem('admin_logged');
-            localStorage.removeItem('admin_email');
-            location.reload();
-        }
-
-        function setupAdminDateFilters() {
-            const ySelect = document.getElementById('admin-year');
-            const d = new Date();
-            const curYear = d.getFullYear();
-            
-            let yHtml = '<option value="all">รวมทุกปี</option>';
-            for(let i = curYear + 2; i >= curYear - 20; i--) {
-                yHtml += `<option value="${i}">${i + 543}</option>`;
+        function setupYearDropdown() {
+            const ySelect = document.getElementById('filter-year');
+            const curYear = new Date().getFullYear();
+            let yHtml = '';
+            for(let i = curYear + 2; i >= curYear - 5; i--) {
+                let selected = (i === curYear) ? 'selected' : '';
+                yHtml += `<option value="${i}" ${selected}>${i + 543}</option>`;
             }
             ySelect.innerHTML = yHtml;
-            ySelect.value = curYear.toString();
-            document.getElementById('admin-month').value = (d.getMonth() + 1).toString().padStart(2, '0');
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
             
-            if(tabId === 'tab-users') loadUsers();
-            if(tabId === 'tab-ledger') refreshData();
-            if(tabId === 'tab-settings') {
-                document.getElementById('api-lock-screen').style.display = 'block';
-                document.getElementById('api-content-box').style.display = 'none';
-                document.getElementById('recheck-pass').value = '';
-                document.getElementById('verify-err').innerText = '';
-            }
-            resetAdminLogoutTimer();
+            const curMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+            document.getElementById('filter-month').value = curMonth;
         }
 
-        async function verifyAdminPassword() {
-            const pass = document.getElementById('recheck-pass').value.trim();
-            const errDiv = document.getElementById('verify-err');
+        // จัดการแท็บหลัก (Navbar)
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabId).style.display = 'block';
+            document.getElementById('btn-' + tabId).classList.add('active');
 
-            if(!pass) {
-                errDiv.innerText = "กรุณากรอกรหัสผ่าน";
-                return;
-            }
-
-            errDiv.innerText = "⏳ กำลังตรวจสอบรหัสผ่าน...";
-            errDiv.style.color = "var(--bbl-blue)";
-
-            const { error } = await sb.auth.signInWithPassword({
-                email: currentAdminEmail,
-                password: pass
-            });
-
-            if(error) {
-                errDiv.innerText = "❌ รหัสผ่านไม่ถูกต้อง";
-                errDiv.style.color = "#D32F2F";
-            } else {
-                document.getElementById('api-lock-screen').style.display = 'none';
-                document.getElementById('api-content-box').style.display = 'block';
-                loadAdminApiKey();
+            if(tabId === 'tab-ledger') fetchTransactions();
+            if(tabId === 'tab-members') fetchUsers();
+            if(tabId === 'tab-ai') {
+                document.getElementById('ai-security-check').style.display = 'block';
+                document.getElementById('ai-settings-form').style.display = 'none';
             }
         }
 
-        async function loadAdminApiKey() {
-            const { data } = await sb.from('settings').select('*').eq('key_name', 'gemini_api_key').single();
-            if(data && data.key_value) {
-                document.getElementById('admin-api-key').value = data.key_value;
-            }
+        // จัดการแท็บย่อย (รายรับ-รายจ่าย VS หอพัก)
+        window.switchLedgerType = function(type) {
+            currentLedgerType = type;
+            document.getElementById('btn-sub-inc').classList.toggle('active', type === 'income_expense');
+            document.getElementById('btn-sub-dorm').classList.toggle('active', type === 'dormitory');
+
+            document.getElementById('sum-inc-exp').style.display = type === 'income_expense' ? 'grid' : 'none';
+            document.getElementById('sum-dorm').style.display = type === 'dormitory' ? 'grid' : 'none';
+            
+            document.getElementById('table-inc-exp').style.display = type === 'income_expense' ? 'block' : 'none';
+            document.getElementById('table-dorm').style.display = type === 'dormitory' ? 'block' : 'none';
+
+            fetchTransactions(); // รีโหลดข้อมูลตาราง
         }
 
-        async function saveAdminApiKey() {
-            const keyVal = document.getElementById('admin-api-key').value.trim();
-            const statusDiv = document.getElementById('save-status');
-            if(!keyVal) return alert('กรุณากรอก API Key');
-
-            statusDiv.innerText = "⏳ กำลังบันทึก...";
-            statusDiv.style.color = "var(--bbl-blue)";
-
-            const { error } = await sb.from('settings').upsert({ id: 1, key_name: 'gemini_api_key', key_value: keyVal });
-            if(error) {
-                statusDiv.innerText = "❌ บันทึกไม่สำเร็จ: " + error.message;
-                statusDiv.style.color = "#D32F2F";
-            } else {
-                statusDiv.innerText = "✅ บันทึก API Key สำเร็จ!";
-                statusDiv.style.color = "#2E7D32";
-                setTimeout(() => statusDiv.innerText = "", 4000);
-            }
-        }
-
-        async function refreshData() {
-            const { data } = await sb.from('transactions').select('*').order('date', {ascending: true}).order('id', {ascending: true});
-            const selMonth = document.getElementById('admin-month').value;
-            const selYear = document.getElementById('admin-year').value;
-
-            let rBalance = 0, totalIncome = 0, totalExpense = 0;
-            let filteredData = [];
-
+        // ดึงรายชื่อผู้ใช้ใส่ Dropdown กรองข้อมูล
+        async function loadUserOptions() {
+            const { data } = await sb.from('users').select('username').order('username');
+            const select = document.getElementById('filter-user');
             if(data) {
-                data.forEach(i => {
-                    // กรองเฉพาะรายรับและรายจ่ายรวม (ไม่เอารายการย่อยหอพักมาคำนวณซ้ำซ้อน)
-                    if (i.type === 'income' || i.type === 'expense') {
-                        const amt = parseFloat(i.amount);
-                        if(i.type === 'income') { rBalance += amt; totalIncome += amt; }
-                        else { rBalance -= amt; totalExpense += amt; }
-                        i.balance = rBalance;
-
-                        const [y, m, d] = i.date.split('-');
-                        let matchMonth = (selMonth === 'all') || (m === selMonth);
-                        let matchYear = (selYear === 'all') || (y === selYear);
-                        if(matchMonth && matchYear) filteredData.push(i);
-                    }
+                data.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.username;
+                    opt.textContent = `เฉพาะผู้ใช้: ${u.username}`;
+                    select.appendChild(opt);
                 });
             }
-
-            document.getElementById('sum-income').innerText = totalIncome.toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' ฿';
-            document.getElementById('sum-expense').innerText = totalExpense.toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' ฿';
-            document.getElementById('sum-balance').innerText = rBalance.toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' ฿';
-
-            if(filteredData.length === 0) {
-                document.getElementById('data-body').innerHTML = `<tr><td colspan="6" style="padding:30px; color:#888;">ไม่พบรายการธุรกรรมในเดือน/ปี ที่เลือก</td></tr>`;
-                return;
-            }
-
-            document.getElementById('data-body').innerHTML = [...filteredData].reverse().map(i => {
-                const aStr = parseFloat(i.amount).toLocaleString('th-TH', {minimumFractionDigits: 2});
-                const bStr = parseFloat(i.balance).toLocaleString('th-TH', {minimumFractionDigits: 2});
-                const inCol = i.type === 'income' ? `<td class="col-amt"><span class="badge-income">+${aStr}</span></td>` : `<td class="col-amt">-</td>`;
-                const outCol = i.type !== 'income' ? `<td class="col-amt"><span class="badge-expense">-${aStr}</span></td>` : `<td class="col-amt">-</td>`;
-                
-                const dParts = i.date.split('-');
-                const thDate = `${parseInt(dParts[2])}/${parseInt(dParts[1])}/${(parseInt(dParts[0])+543).toString().substring(2)}`;
-
-                return `<tr>
-                    <td style="font-weight: 600; color: #555;">${thDate}</td>
-                    <td style="text-align:left; padding-left:20px;">👤 <strong>${i.username}</strong></td>
-                    ${inCol}${outCol}
-                    <td class="col-amt" style="color:var(--bbl-blue); font-weight:bold;">${bStr}</td>
-                    <td style="text-align:left; color: #666;">${i.slip_text || '-'}</td>
-                </tr>`;
-            }).join('');
         }
 
-        async function loadUsers() {
-            const { data } = await sb.from('users').select('*').order('id', {ascending: true});
-            if(!data) return;
-            document.getElementById('users-body').innerHTML = data.map((u, idx) => {
-                
-                // ตรวจสอบค่า boolean ของระบบหอพัก
-                const isDormActive = u.dormitory_active === true;
-                const dormBtn = isDormActive 
-                    ? `<button class="btn-toggle-on" onclick="toggleDormStatus('${u.username}', false)">✅ เปิด</button>` 
-                    : `<button class="btn-toggle-off" onclick="toggleDormStatus('${u.username}', true)">❌ ปิด</button>`;
-
-                return `<tr>
-                    <td style="color: #666;">${idx + 1}</td>
-                    <td style="text-align: left; padding-left: 20px;"><strong>${u.username}</strong></td>
-                    <td style="font-family: monospace; letter-spacing: 2px;">${u.pin}</td>
-                    <td>${dormBtn}</td>
-                    <td>
-                        <button class="btn-edit" onclick="editUser('${u.username}', '${u.pin}')">✏️ แก้ไข PIN</button>
-                        <button class="btn-del" onclick="deleteUser('${u.username}')">🗑️ ลบ</button>
-                    </td>
-                </tr>`;
-            }).join('');
+        function fmtAmt(num) {
+            if(isNaN(num)) return "0.00";
+            return parseFloat(num).toLocaleString('th-TH', {minimumFractionDigits: 2});
+        }
+        function fmtDate(dateStr) {
+            if(!dateStr) return "-";
+            const p = dateStr.split('-');
+            return `${parseInt(p[2])}/${parseInt(p[1])}/${(parseInt(p[0])<2500 ? parseInt(p[0])+543 : parseInt(p[0])).toString().slice(-2)}`;
         }
 
-        // --- ระบบเปิด-ปิดสิทธิ์หอพัก ---
-        async function toggleDormStatus(username, newStatus) {
-            const statusText = newStatus ? "เปิด" : "ปิด";
-            if(confirm(`คุณต้องการ ${statusText} สิทธิ์การเข้าถึงระบบหอพักสำหรับผู้ใช้ "${username}" ใช่หรือไม่?`)) {
-                const { error } = await sb.from('users').update({ dormitory_active: newStatus }).eq('username', username);
-                if (error) {
-                    alert('เกิดข้อผิดพลาด: โปรดตรวจสอบว่ามี Column: dormitory_active (boolean) ในตาราง users');
-                } else {
-                    loadUsers();
+        // 1. ระบบสมุดบัญชีรวม (ดึงและกรองข้อมูล)
+        window.fetchTransactions = async function() {
+            const m = document.getElementById('filter-month').value;
+            const y = document.getElementById('filter-year').value;
+            const usr = document.getElementById('filter-user').value;
+
+            const tbodyInc = document.getElementById('tbody-inc-exp');
+            const tbodyDorm = document.getElementById('tbody-dorm');
+            
+            tbodyInc.innerHTML = `<tr><td colspan="6" style="padding: 20px;">กำลังโหลดข้อมูล...</td></tr>`;
+            tbodyDorm.innerHTML = `<tr><td colspan="8" style="padding: 20px;">กำลังโหลดข้อมูล...</td></tr>`;
+
+            try {
+                let query = sb.from('transactions').select('*').order('date', {ascending: true}).order('id', {ascending: true});
+                if(usr !== 'all') query = query.eq('username', usr);
+                
+                const { data, error } = await query;
+                if(error) throw error;
+
+                let sumInc = 0, sumExp = 0, sumDorm = 0;
+                let incRows = [], dormRows = [];
+                let balances = {}; 
+
+                if(data) {
+                    data.forEach(item => {
+                        if(!item.date) return;
+                        const dParts = item.date.split('-');
+                        let yItem = parseInt(dParts[0]);
+                        if(yItem > 2500) yItem -= 543;
+                        let yFilter = parseInt(y);
+                        if(yFilter > 2500) yFilter -= 543;
+
+                        if(yItem === yFilter && dParts[1] === m) {
+                            const amt = parseFloat(item.amount) || 0;
+                            const uname = item.username || 'Unknown';
+                            if(!balances[uname]) balances[uname] = 0;
+
+                            const uIcon = `<div class="user-col"><div class="user-icon">👤</div>${uname}</div>`;
+
+                            if(item.type === 'income' || item.type === 'expense') {
+                                if(item.type === 'income') { balances[uname] += amt; sumInc += amt; }
+                                else { balances[uname] -= amt; sumExp += amt; }
+                                
+                                const iStr = item.type === 'income' ? amt.toLocaleString('th-TH',{minimumFractionDigits:2}) : '-';
+                                const eStr = item.type === 'expense' ? `-${amt.toLocaleString('th-TH',{minimumFractionDigits:2})}` : '-';
+                                const bStr = balances[uname].toLocaleString('th-TH',{minimumFractionDigits:2});
+
+                                incRows.push(`<tr>
+                                    <td>${fmtDate(item.date)}</td>
+                                    <td class="text-left">${uIcon}</td>
+                                    <td style="color:var(--success); font-weight:bold; background:#fafffa;">${iStr}</td>
+                                    <td style="color:var(--danger); font-weight:bold; background:#fffafa;">${eStr}</td>
+                                    <td style="color:var(--bbl-blue); font-weight:bold;">${bStr}</td>
+                                    <td class="text-left" style="color:#666;">${item.slip_text || '-'}</td>
+                                </tr>`);
+                            } else if (item.type === 'dormitory') {
+                                sumDorm += amt;
+                                dormRows.push(`<tr>
+                                    <td>${fmtDate(item.date)}</td>
+                                    <td class="text-left">${uIcon}</td>
+                                    <td>${item.room_rate || '0'}</td>
+                                    <td>${item.water_bill || '0'}</td>
+                                    <td>${item.electric_bill || '0'}</td>
+                                    <td style="color:var(--bbl-orange); font-weight:bold;">${amt.toLocaleString('th-TH',{minimumFractionDigits:2})} ฿</td>
+                                    <td>${item.barcode || '-'}</td>
+                                    <td class="text-left" style="color:#666;">${item.slip_text || '-'}</td>
+                                </tr>`);
+                            }
+                        }
+                    });
                 }
+
+                document.getElementById('totalInc').innerText = fmtAmt(sumInc) + ' ฿';
+                document.getElementById('totalExp').innerText = fmtAmt(sumExp) + ' ฿';
+                document.getElementById('totalBal').innerText = fmtAmt(sumInc - sumExp) + ' ฿';
+                document.getElementById('totalDorm').innerText = fmtAmt(sumDorm) + ' ฿';
+
+                incRows.reverse();
+                dormRows.reverse();
+
+                tbodyInc.innerHTML = incRows.length ? incRows.join('') : `<tr><td colspan="6" style="padding:30px; color:#888; font-weight:bold;">ไม่พบข้อมูลในเดือนที่เลือก</td></tr>`;
+                tbodyDorm.innerHTML = dormRows.length ? dormRows.join('') : `<tr><td colspan="8" style="padding:30px; color:#888; font-weight:bold;">ไม่พบข้อมูลค่าหอพักในเดือนที่เลือก</td></tr>`;
+
+            } catch (err) {
+                tbodyInc.innerHTML = `<tr><td colspan="6" style="color:red; padding: 20px;">Error: ${err.message}</td></tr>`;
+                tbodyDorm.innerHTML = `<tr><td colspan="8" style="color:red; padding: 20px;">Error: ${err.message}</td></tr>`;
             }
         }
 
-        async function editUser(username, oldPin) {
-            const newPin = prompt(`กรอกรหัส PIN 6 หลักใหม่ สำหรับผู้ใช้: ${username}`, oldPin);
-            if(newPin && newPin.length === 6 && newPin !== oldPin) {
-                await sb.from('users').update({ pin: newPin }).eq('username', username);
-                alert('อัปเดต PIN สำเร็จ');
-                loadUsers();
-            } else if(newPin) {
-                alert('รหัส PIN ต้องมีความยาว 6 หลักเท่านั้น');
+        // 2. ระบบจัดการสมาชิก (แก้ไขอัปเดตสิทธิ์สมบูรณ์)
+        window.fetchUsers = async function() {
+            const tbody = document.getElementById('tbody-members');
+            tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px;">กำลังโหลดข้อมูลสมาชิก...</td></tr>`;
+            
+            try {
+                const { data, error } = await sb.from('users').select('*').order('id', {ascending: true});
+                if(error) throw error;
+
+                if(!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="padding:30px; color:#888; font-weight:bold;">ไม่มีสมาชิกในระบบ</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                data.forEach((user, idx) => {
+                    const iActive = user.income_active !== false; 
+                    const dActive = user.dormitory_active === true;
+                    
+                    const dBadge = dActive ? `<span class="status-badge status-on">✅ เปิด</span>` : `<span class="status-badge status-off">❌ ปิด</span>`;
+
+                    html += `<tr>
+                        <td>${idx + 1}</td>
+                        <td style="font-weight:bold; color:var(--bbl-blue); font-size: 1.1rem;">${user.username}</td>
+                        <td style="letter-spacing: 2px; font-size: 1.1rem;">${user.pin || '------'}</td>
+                        <td>
+                            <label class="switch">
+                                <input type="checkbox" ${iActive ? 'checked' : ''} onchange="updateAccess('${user.id}', 'income_active', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <label class="switch">
+                                <input type="checkbox" ${dActive ? 'checked' : ''} onchange="updateAccess('${user.id}', 'dormitory_active', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <br><div style="margin-top:8px;">${dBadge}</div>
+                        </td>
+                        <td>
+                            <button class="btn-sm btn-edit" onclick="editPin('${user.id}', '${user.username}')">✏️ แก้ไข PIN</button>
+                            <button class="btn-sm btn-del" onclick="deleteUser('${user.id}', '${user.username}')">🗑️ ลบ</button>
+                        </td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch(err) {
+                tbody.innerHTML = `<tr><td colspan="6" style="color:red; padding: 20px;">Error: ${err.message}</td></tr>`;
             }
         }
 
-        async function deleteUser(username) {
-            if(confirm(`⚠️ คำเตือน: ยืนยันการลบสมาชิก "${username}" ?\nข้อมูลธุรกรรมทั้งหมดจะถูกลบออกไปด้วย`)) {
-                await sb.from('transactions').delete().eq('username', username);
-                await sb.from('users').delete().eq('username', username);
-                alert('ลบผู้ใช้งานสำเร็จ');
-                loadUsers();
+        window.updateAccess = async function(id, field, val) {
+            try {
+                const { error } = await sb.from('users').update({ [field]: val }).eq('id', id);
+                if(error) throw error;
+                if(field === 'dormitory_active') fetchUsers(); 
+            } catch(e) {
+                alert("เปลี่ยนสิทธิ์ไม่สำเร็จ ตรวจสอบโครงสร้างคอลัมน์ในตาราง users");
+                fetchUsers(); 
             }
+        }
+
+        window.editPin = async function(id, uname) {
+            const newPin = prompt(`ตั้งรหัส PIN 6 หลักใหม่สำหรับผู้ใช้: ${uname}`);
+            if(newPin === null) return;
+            if(newPin.length !== 6 || isNaN(newPin)) return alert("รหัส PIN ต้องเป็นตัวเลข 6 หลักเท่านั้น");
+            
+            try {
+                const { error } = await sb.from('users').update({ pin: newPin }).eq('id', id);
+                if(error) throw error;
+                alert("แก้ไข PIN สำเร็จ");
+                fetchUsers();
+            } catch(e) { alert("แก้ไขไม่สำเร็จ: " + e.message); }
+        }
+
+        window.deleteUser = async function(id, uname) {
+            if(!confirm(`⚠️ อันตราย!\nคุณต้องการลบบัญชี "${uname}" และข้อมูลธุรกรรมทั้งหมดของผู้ใช้นี้ใช่หรือไม่?`)) return;
+            try {
+                await sb.from('transactions').delete().eq('username', uname);
+                const { error } = await sb.from('users').delete().eq('id', id);
+                if(error) throw error;
+                alert("ลบบัญชีและข้อมูลสำเร็จ");
+                fetchUsers();
+                loadUserOptions();
+            } catch(e) { alert("ลบไม่สำเร็จ: " + e.message); }
+        }
+
+        // 3. ระบบจัดการ AI
+        window.loadApiKey = async function() {
+            try {
+                const { data } = await sb.from('settings').select('key_value').eq('key_name', 'gemini_api_key').single();
+                if(data) document.getElementById('geminiApiKey').value = data.key_value;
+            } catch(e) {}
+        }
+
+        window.saveApiKey = async function() {
+            const newKey = document.getElementById('geminiApiKey').value.trim();
+            if(!newKey) return alert("กรุณาระบุ API Key");
+            
+            try {
+                const { data } = await sb.from('settings').select('id').eq('key_name', 'gemini_api_key');
+                if(data && data.length > 0) {
+                    await sb.from('settings').update({ key_value: newKey }).eq('key_name', 'gemini_api_key');
+                } else {
+                    await sb.from('settings').insert([{ key_name: 'gemini_api_key', key_value: newKey }]);
+                }
+                alert("บันทึก Gemini API Key สำเร็จ!");
+            } catch(e) { alert("บันทึกไม่สำเร็จ: " + e.message); }
+        }
+
+        // 4. ระบบจัดการแบนเนอร์ (Banners)
+        window.loadBanners = async function() {
+            const div = document.getElementById("bannersTable");
+            div.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">กำลังโหลดโฆษณา...</td></tr>`;
+            try {
+                const { data, error } = await sb.from('banners').select('*').order('sort_order', {ascending: true});
+                if(error) throw error;
+                adminBanners = data || [];
+
+                if(adminBanners.length === 0) { 
+                    div.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888; font-weight:bold; padding:30px;">ยังไม่มีป้ายโฆษณาในระบบ</td></tr>`; 
+                    return; 
+                }
+                
+                let html = `<tr><th width="40%">รูปภาพโฆษณา</th><th width="40%">ลิงก์ปลายทาง (เมื่อคลิก)</th><th width="20%">จัดการ</th></tr>`;
+                adminBanners.forEach(b => {
+                   const safeData = encodeURIComponent(JSON.stringify(b));
+                   html += `<tr draggable="true" data-banner-id="${b.id}" ondragstart="bannerDragStart(event)" ondragover="bannerDragOver(event)" ondragenter="bannerDragEnter(event)" ondragleave="bannerDragLeave(event)" ondrop="bannerDrop(event, '${b.id}')" style="cursor: grab;">
+                     <td style="text-align:center; background:#fafafa; padding: 10px;"><img src="${b.image_url}" style="max-width:200px; height:auto; border-radius:8px; border:1px solid #ccc;"></td>
+                     <td style="word-break: break-all;">${b.target_url || '-'}</td>
+                     <td style="text-align:center;">
+                        <div style="display:flex; gap:5px; justify-content:center;">
+                            <button class="btn-sm btn-edit" onclick="editBanner('${safeData}')">แก้ไข</button>
+                            <button class="btn-sm btn-del" onclick="deleteBanner('${b.id}')">ลบ</button>
+                        </div>
+                     </td>
+                   </tr>`;
+                });
+                div.innerHTML = html;
+            } catch (e) {
+                div.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center; padding:20px;">ดึงข้อมูลล้มเหลว</td></tr>`;
+            }
+        }
+
+        window.bannerDragStart = function(e) {
+            e.dataTransfer.setData("text/plain", e.currentTarget.getAttribute("data-banner-id"));
+            e.currentTarget.style.opacity = "0.5";
+        }
+        window.bannerDragOver = function(e) { e.preventDefault(); }
+        window.bannerDragEnter = function(e) { e.currentTarget.style.background = "#e8f5e9"; }
+        window.bannerDragLeave = function(e) { e.currentTarget.style.background = ""; }
+        window.bannerDrop = async function(e, targetId) {
+            e.preventDefault();
+            e.currentTarget.style.background = "";
+            let sourceId = e.dataTransfer.getData("text/plain");
+            if(sourceId === targetId) return;
+
+            let sourceIdx = adminBanners.findIndex(b => b.id === sourceId);
+            let targetIdx = adminBanners.findIndex(b => b.id === targetId);
+            
+            let [movedItem] = adminBanners.splice(sourceIdx, 1);
+            adminBanners.splice(targetIdx, 0, movedItem);
+            
+            const updates = adminBanners.map((b, index) => ({
+                id: b.id, image_url: b.image_url, target_url: b.target_url, sort_order: index
+            }));
+
+            try {
+                await sb.from('banners').upsert(updates);
+                loadBanners(); 
+            } catch(err) { alert("จัดเรียงลำดับล้มเหลว"); }
+        }
+
+        window.saveBanner = async function() {
+            const editId = document.getElementById("editBannerId").value;
+            const imageUrl = document.getElementById("bannerImageUrl").value.trim();
+            const linkUrl = document.getElementById("bannerLinkUrl").value.trim();
+            
+            if(!imageUrl) return alert("กรุณาระบุ URL รูปภาพโฆษณา");
+            
+            try {
+                if(editId) {
+                    await sb.from('banners').update({ image_url: imageUrl, target_url: linkUrl }).eq('id', editId);
+                } else {
+                    let nextOrder = adminBanners.length;
+                    await sb.from('banners').insert([{ image_url: imageUrl, target_url: linkUrl, sort_order: nextOrder }]);
+                }
+                cancelEditBanner();
+                loadBanners();
+            } catch(e) { alert("บันทึกล้มเหลว"); }
+        }
+
+        window.editBanner = function(encodedData) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            document.getElementById("editBannerId").value = data.id;
+            document.getElementById("bannerImageUrl").value = data.image_url;
+            document.getElementById("bannerLinkUrl").value = data.target_url || "";
+            document.getElementById("btnSaveBanner").innerText = "บันทึกการแก้ไข";
+            document.getElementById("btnCancelBanner").style.display = "block";
+        }
+
+        window.cancelEditBanner = function() {
+            document.getElementById("editBannerId").value = "";
+            document.getElementById("bannerImageUrl").value = "";
+            document.getElementById("bannerLinkUrl").value = "";
+            document.getElementById("btnSaveBanner").innerText = "เพิ่มป้ายโฆษณา";
+            document.getElementById("btnCancelBanner").style.display = "none";
+        }
+
+        window.deleteBanner = async function(id) {
+            if(!confirm("ยืนยันการลบป้ายโฆษณานี้?")) return;
+            try {
+                await sb.from('banners').delete().eq('id', id);
+                loadBanners();
+            } catch(e) { alert("ลบล้มเหลว"); }
         }
     </script>
 </body>
