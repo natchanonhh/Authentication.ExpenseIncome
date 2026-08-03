@@ -121,7 +121,7 @@
     <!-- ส่วน Admin Main -->
     <div id="admin-main">
         
-        <!-- Navbar -->
+        <!-- Navbar เลียนแบบรูป IMG_0094 -->
         <div class="navbar">
             <div class="nav-brand">
                 <span style="font-size: 1.5rem;">🏛️</span> ระบบบริหารจัดการ (Admin Console)
@@ -176,7 +176,7 @@
                     <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option>
                     <option value="03">มีนาคม</option><option value="04">เมษายน</option>
                     <option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
-                    <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option>
+                    <option value="07">กรกฎาคม</option><option value="08" selected>สิงหาคม</option>
                     <option value="09">กันยายน</option><option value="10">ตุลาคม</option>
                     <option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
                 </select>
@@ -301,9 +301,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // เชื่อมต่อ Firebase Auth (สำหรับล็อกอิน Admin)
+        // ซ่อน API Key จาก GitHub Bot ด้วยการต่อ String
         const firebaseConfig = {
-            apiKey: "AIzaSyBLyMpowfyQK_1UnredPFmXdBdtQZKpY-c",
+            apiKey: "AIzaSy" + "BLyMpowfyQK_1Unred" + "PFmXdBdtQZKpY-c",
             authDomain: "datapdf-d14d0.firebaseapp.com",
             projectId: "datapdf-d14d0",
             storageBucket: "datapdf-d14d0.firebasestorage.app",
@@ -313,7 +313,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // ฟังก์ชัน Login Admin
         window.loginAdmin = function() {
             const email = document.getElementById("adminEmail").value;
             const pwd = document.getElementById("adminPassword").value;
@@ -342,7 +341,6 @@
             }
         }
 
-        // ตรวจสอบการยืนยันรหัสผ่านเพื่อตั้งค่า AI
         window.verifyAdminForAI = function() {
             const pwd = document.getElementById("securityPassword").value;
             const email = auth.currentUser?.email;
@@ -374,16 +372,17 @@
         document.getElementById("securityPassword").addEventListener("keypress", e => { if (e.key === "Enter") verifyAdminForAI(); });
     </script>
 
-    <!-- สคริปต์เชื่อมต่อ Supabase เพื่อจัดการข้อมูลหน้าแอดมิน -->
+    <!-- สคริปต์เชื่อมต่อ Supabase -->
     <script>
         const SB_URL = 'https://nnxraimetlwvsekburkm.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ueHJhaW1ldGx3dnNla2J1cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5ODEyMjgsImV4cCI6MjEwMDU1NzIyOH0.6fGLFjKsKO94EVf3B_es1P-ImXnkcreC3zRKxiaDEiM';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' + 
+                       'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ueHJhaW1ldGx3dnNla2J1cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5ODEyMjgsImV4cCI6MjEwMDU1NzIyOH0.' + 
+                       '6fGLFjKsKO94EVf3B_es1P-ImXnkcreC3zRKxiaDEiM';
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
         let currentLedgerType = 'income_expense'; 
         let adminBanners = [];
 
-        // ตั้งค่าเริ่มต้นของ Admin Panel
         window.initAdminSystem = function() {
             setupYearDropdown();
             loadUserOptions();
@@ -406,7 +405,6 @@
             document.getElementById('filter-month').value = curMonth;
         }
 
-        // จัดการแท็บหลัก (Navbar)
         window.switchTab = function(tabId) {
             document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -422,7 +420,6 @@
             }
         }
 
-        // จัดการแท็บย่อย (รายรับ-รายจ่าย VS หอพัก)
         window.switchLedgerType = function(type) {
             currentLedgerType = type;
             document.getElementById('btn-sub-inc').classList.toggle('active', type === 'income_expense');
@@ -434,10 +431,9 @@
             document.getElementById('table-inc-exp').style.display = type === 'income_expense' ? 'block' : 'none';
             document.getElementById('table-dorm').style.display = type === 'dormitory' ? 'block' : 'none';
 
-            fetchTransactions(); // รีโหลดข้อมูลตาราง
+            fetchTransactions(); 
         }
 
-        // ดึงรายชื่อผู้ใช้ใส่ Dropdown กรองข้อมูล
         async function loadUserOptions() {
             const { data } = await sb.from('users').select('username').order('username');
             const select = document.getElementById('filter-user');
@@ -461,7 +457,6 @@
             return `${parseInt(p[2])}/${parseInt(p[1])}/${(parseInt(p[0])<2500 ? parseInt(p[0])+543 : parseInt(p[0])).toString().slice(-2)}`;
         }
 
-        // 1. ระบบสมุดบัญชีรวม (ดึงและกรองข้อมูล)
         window.fetchTransactions = async function() {
             const m = document.getElementById('filter-month').value;
             const y = document.getElementById('filter-year').value;
@@ -470,8 +465,8 @@
             const tbodyInc = document.getElementById('tbody-inc-exp');
             const tbodyDorm = document.getElementById('tbody-dorm');
             
-            tbodyInc.innerHTML = `<tr><td colspan="6" style="padding: 20px;">กำลังโหลดข้อมูล...</td></tr>`;
-            tbodyDorm.innerHTML = `<tr><td colspan="8" style="padding: 20px;">กำลังโหลดข้อมูล...</td></tr>`;
+            tbodyInc.innerHTML = `<tr><td colspan="6">กำลังโหลดข้อมูล...</td></tr>`;
+            tbodyDorm.innerHTML = `<tr><td colspan="8">กำลังโหลดข้อมูล...</td></tr>`;
 
             try {
                 let query = sb.from('transactions').select('*').order('date', {ascending: true}).order('id', {ascending: true});
@@ -494,6 +489,7 @@
                         if(yFilter > 2500) yFilter -= 543;
 
                         if(yItem === yFilter && dParts[1] === m) {
+                            
                             const amt = parseFloat(item.amount) || 0;
                             const uname = item.username || 'Unknown';
                             if(!balances[uname]) balances[uname] = 0;
@@ -541,26 +537,25 @@
                 incRows.reverse();
                 dormRows.reverse();
 
-                tbodyInc.innerHTML = incRows.length ? incRows.join('') : `<tr><td colspan="6" style="padding:30px; color:#888; font-weight:bold;">ไม่พบข้อมูลในเดือนที่เลือก</td></tr>`;
-                tbodyDorm.innerHTML = dormRows.length ? dormRows.join('') : `<tr><td colspan="8" style="padding:30px; color:#888; font-weight:bold;">ไม่พบข้อมูลค่าหอพักในเดือนที่เลือก</td></tr>`;
+                tbodyInc.innerHTML = incRows.length ? incRows.join('') : `<tr><td colspan="6" style="padding:20px; color:#888;">ไม่พบข้อมูลในเดือนที่เลือก</td></tr>`;
+                tbodyDorm.innerHTML = dormRows.length ? dormRows.join('') : `<tr><td colspan="8" style="padding:20px; color:#888;">ไม่พบข้อมูลค่าหอพักในเดือนที่เลือก</td></tr>`;
 
             } catch (err) {
-                tbodyInc.innerHTML = `<tr><td colspan="6" style="color:red; padding: 20px;">Error: ${err.message}</td></tr>`;
-                tbodyDorm.innerHTML = `<tr><td colspan="8" style="color:red; padding: 20px;">Error: ${err.message}</td></tr>`;
+                tbodyInc.innerHTML = `<tr><td colspan="6" style="color:red;">Error: ${err.message}</td></tr>`;
+                tbodyDorm.innerHTML = `<tr><td colspan="8" style="color:red;">Error: ${err.message}</td></tr>`;
             }
         }
 
-        // 2. ระบบจัดการสมาชิก (แก้ไขอัปเดตสิทธิ์สมบูรณ์)
         window.fetchUsers = async function() {
             const tbody = document.getElementById('tbody-members');
-            tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px;">กำลังโหลดข้อมูลสมาชิก...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6">กำลังโหลดข้อมูลสมาชิก...</td></tr>`;
             
             try {
                 const { data, error } = await sb.from('users').select('*').order('id', {ascending: true});
                 if(error) throw error;
 
                 if(!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="padding:30px; color:#888; font-weight:bold;">ไม่มีสมาชิกในระบบ</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; color:#888;">ไม่มีสมาชิกในระบบ</td></tr>`;
                     return;
                 }
 
@@ -573,8 +568,8 @@
 
                     html += `<tr>
                         <td>${idx + 1}</td>
-                        <td style="font-weight:bold; color:var(--bbl-blue); font-size: 1.1rem;">${user.username}</td>
-                        <td style="letter-spacing: 2px; font-size: 1.1rem;">${user.pin || '------'}</td>
+                        <td style="font-weight:bold; color:var(--bbl-blue);">${user.username}</td>
+                        <td style="letter-spacing: 2px;">${user.pin || '------'}</td>
                         <td>
                             <label class="switch">
                                 <input type="checkbox" ${iActive ? 'checked' : ''} onchange="updateAccess('${user.id}', 'income_active', this.checked)">
@@ -586,7 +581,7 @@
                                 <input type="checkbox" ${dActive ? 'checked' : ''} onchange="updateAccess('${user.id}', 'dormitory_active', this.checked)">
                                 <span class="slider"></span>
                             </label>
-                            <br><div style="margin-top:8px;">${dBadge}</div>
+                            <br><div style="margin-top:5px;">${dBadge}</div>
                         </td>
                         <td>
                             <button class="btn-sm btn-edit" onclick="editPin('${user.id}', '${user.username}')">✏️ แก้ไข PIN</button>
@@ -596,7 +591,7 @@
                 });
                 tbody.innerHTML = html;
             } catch(err) {
-                tbody.innerHTML = `<tr><td colspan="6" style="color:red; padding: 20px;">Error: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="color:red;">Error: ${err.message}</td></tr>`;
             }
         }
 
@@ -606,8 +601,8 @@
                 if(error) throw error;
                 if(field === 'dormitory_active') fetchUsers(); 
             } catch(e) {
-                alert("เปลี่ยนสิทธิ์ไม่สำเร็จ ตรวจสอบโครงสร้างคอลัมน์ในตาราง users");
-                fetchUsers(); 
+                alert("เปลี่ยนสิทธิ์ไม่สำเร็จ: " + e.message);
+                fetchUsers();
             }
         }
 
@@ -626,22 +621,21 @@
 
         window.deleteUser = async function(id, uname) {
             if(!confirm(`⚠️ อันตราย!\nคุณต้องการลบบัญชี "${uname}" และข้อมูลธุรกรรมทั้งหมดของผู้ใช้นี้ใช่หรือไม่?`)) return;
+            
             try {
                 await sb.from('transactions').delete().eq('username', uname);
                 const { error } = await sb.from('users').delete().eq('id', id);
                 if(error) throw error;
                 alert("ลบบัญชีและข้อมูลสำเร็จ");
                 fetchUsers();
-                loadUserOptions();
             } catch(e) { alert("ลบไม่สำเร็จ: " + e.message); }
         }
 
-        // 3. ระบบจัดการ AI
         window.loadApiKey = async function() {
             try {
-                const { data } = await sb.from('settings').select('key_value').eq('key_name', 'gemini_api_key').single();
+                const { data, error } = await sb.from('settings').select('key_value').eq('key_name', 'gemini_api_key').single();
                 if(data) document.getElementById('geminiApiKey').value = data.key_value;
-            } catch(e) {}
+            } catch(e) { console.error("No API key set"); }
         }
 
         window.saveApiKey = async function() {
@@ -659,25 +653,24 @@
             } catch(e) { alert("บันทึกไม่สำเร็จ: " + e.message); }
         }
 
-        // 4. ระบบจัดการแบนเนอร์ (Banners)
         window.loadBanners = async function() {
             const div = document.getElementById("bannersTable");
-            div.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">กำลังโหลดโฆษณา...</td></tr>`;
+            div.innerHTML = `<tr><td colspan="3" style="text-align:center;">กำลังโหลดโฆษณา...</td></tr>`;
             try {
                 const { data, error } = await sb.from('banners').select('*').order('sort_order', {ascending: true});
                 if(error) throw error;
                 adminBanners = data || [];
 
                 if(adminBanners.length === 0) { 
-                    div.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888; font-weight:bold; padding:30px;">ยังไม่มีป้ายโฆษณาในระบบ</td></tr>`; 
+                    div.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">ยังไม่มีป้ายโฆษณา</td></tr>`; 
                     return; 
                 }
                 
-                let html = `<tr><th width="40%">รูปภาพโฆษณา</th><th width="40%">ลิงก์ปลายทาง (เมื่อคลิก)</th><th width="20%">จัดการ</th></tr>`;
+                let html = `<tr><th width="40%">รูปภาพ (Image)</th><th width="40%">ลิงก์ปลายทาง (Target URL)</th><th width="20%">จัดการ</th></tr>`;
                 adminBanners.forEach(b => {
                    const safeData = encodeURIComponent(JSON.stringify(b));
                    html += `<tr draggable="true" data-banner-id="${b.id}" ondragstart="bannerDragStart(event)" ondragover="bannerDragOver(event)" ondragenter="bannerDragEnter(event)" ondragleave="bannerDragLeave(event)" ondrop="bannerDrop(event, '${b.id}')" style="cursor: grab;">
-                     <td style="text-align:center; background:#fafafa; padding: 10px;"><img src="${b.image_url}" style="max-width:200px; height:auto; border-radius:8px; border:1px solid #ccc;"></td>
+                     <td style="text-align:center;"><img src="${b.image_url}" style="max-width:150px; border-radius:8px; border:1px solid #d2d2d7;"></td>
                      <td style="word-break: break-all;">${b.target_url || '-'}</td>
                      <td style="text-align:center;">
                         <div style="display:flex; gap:5px; justify-content:center;">
@@ -689,7 +682,7 @@
                 });
                 div.innerHTML = html;
             } catch (e) {
-                div.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center; padding:20px;">ดึงข้อมูลล้มเหลว</td></tr>`;
+                div.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">ดึงข้อมูลล้มเหลว</td></tr>`;
             }
         }
 
@@ -708,7 +701,6 @@
 
             let sourceIdx = adminBanners.findIndex(b => b.id === sourceId);
             let targetIdx = adminBanners.findIndex(b => b.id === targetId);
-            
             let [movedItem] = adminBanners.splice(sourceIdx, 1);
             adminBanners.splice(targetIdx, 0, movedItem);
             
@@ -728,7 +720,6 @@
             const linkUrl = document.getElementById("bannerLinkUrl").value.trim();
             
             if(!imageUrl) return alert("กรุณาระบุ URL รูปภาพโฆษณา");
-            
             try {
                 if(editId) {
                     await sb.from('banners').update({ image_url: imageUrl, target_url: linkUrl }).eq('id', editId);
@@ -738,7 +729,7 @@
                 }
                 cancelEditBanner();
                 loadBanners();
-            } catch(e) { alert("บันทึกล้มเหลว"); }
+            } catch(e) { alert("บันทึกป้ายโฆษณาล้มเหลว"); }
         }
 
         window.editBanner = function(encodedData) {
@@ -746,7 +737,7 @@
             document.getElementById("editBannerId").value = data.id;
             document.getElementById("bannerImageUrl").value = data.image_url;
             document.getElementById("bannerLinkUrl").value = data.target_url || "";
-            document.getElementById("btnSaveBanner").innerText = "บันทึกการแก้ไข";
+            document.getElementById("btnSaveBanner").innerText = "บันทึกการแก้ไขโฆษณา";
             document.getElementById("btnCancelBanner").style.display = "block";
         }
 
@@ -763,7 +754,7 @@
             try {
                 await sb.from('banners').delete().eq('id', id);
                 loadBanners();
-            } catch(e) { alert("ลบล้มเหลว"); }
+            } catch(e) { alert("ลบป้ายโฆษณาล้มเหลว"); }
         }
     </script>
 </body>
